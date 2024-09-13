@@ -125,8 +125,8 @@ class VentanaPrueba(tk.Toplevel):
 #                Estimulos.append([-x[i], -y[i]])
                 estimulos.append([grados_a_mm(-x[i]), grados_a_mm(-y[i])])
         cantidad_total_estimulos = len(estimulos)
-        Xmin0, Ymin0 = -100, -70
-        Xmax0, Ymax0 = 100, 70      
+        Xmin0, Ymin0 = np.min(estimulos, axis=0)
+        Xmax0, Ymax0 = np.max(estimulos, axis=0)     
         print('Limites X:',Xmin0,Xmax0)
         print('Limites Y:',Ymin0,Ymax0)
         # Mezclar el vector de estimulos
