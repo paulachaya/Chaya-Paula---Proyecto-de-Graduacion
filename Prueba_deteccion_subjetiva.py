@@ -12,6 +12,7 @@ import winsound
 from queue import Queue
 import keyboard
 from collections import Counter
+import pandas as pd
 # __ Funciones de conversión __
 
 def px_a_mm_X(valor_en_px):
@@ -112,10 +113,37 @@ class VentanaPrueba(tk.Toplevel):
         if largo > 0:
             self.canvas.after(interval, lambda: self.reducir_tamano(ox,oy,largo))
 
+    # Funcion para graficar el resultado
+    def Grafica_resultado(self, Sujeto,Ojo,estimulo_no_detectado):
+        
+        # Genero el perímetro del escotoma fisiológico
+        if Ojo == 'Derecho':
+            ex, ey = generar_puntos_circunferencia(3,0,2*np.pi, 100, centro=(15, 0))
+        else:
+            ex, ey = generar_puntos_circunferencia(3,0,2*np.pi, 100, centro=(-15, 0))
+            
+        plt.figure(figsize=(15,10))
+        plt.hist2d(mm_a_grados(np.array([coord[0] for coord in estimulo_no_detectado])),
+                   mm_a_grados(np.array([coord[1] for coord in estimulo_no_detectado])),
+                   bins=[30, 10], cmap='Greys')
+        plt.plot(ex,ey)
+        plt.colorbar(label='Frecuencia')
+        plt.xlim(-25,25);plt.ylim(-17,17)
+        plt.grid(True,axis='both')
+        
+        # Añadir circunferencias de cuadrícula
+        for i in range(0, 30):
+            circulo = Circle((0, 0), i,linestyle='-',facecolor='none',edgecolor='grey')        
+            plt.gca().add_artist(circulo)
+        plt.title(f'Resultado final Sujeto {Sujeto} Ojo {Ojo}')
+        plt.xlabel('Valor X');plt.ylabel('Valor Y')
+        plt.show()
+
+
     # __ Función de la prueba __
     def prueba(self):
         # Genero vector con estímulos
-        estimulos = []
+        Estimulos_grafica,estimulos = [],[]
         radios,lim1,lim2,num_puntos = np.arange(7, 22, 3), -np.pi / 4, np.pi / 4, 3
         for i in range(len(radios)):
             x, y = generar_puntos_circunferencia(radios[i], lim1, lim2,
@@ -124,7 +152,9 @@ class VentanaPrueba(tk.Toplevel):
             for i in range(1,len(x)):
                 estimulos.append([grados_a_mm(x[i]), grados_a_mm(y[i])])
                 estimulos.append([grados_a_mm(-x[i]), grados_a_mm(-y[i])])
-
+                Estimulos_grafica.append([grados_a_mm(x[i]), grados_a_mm(y[i])])
+                Estimulos_grafica.append([grados_a_mm(-x[i]), grados_a_mm(-y[i])])
+        cantidad_inicial_de_estimulos = len(estimulos)
         for k in range(3):
 #       ......................... TEXTO ...............................  
             print(f'Ronda {k+1}')
@@ -228,6 +258,29 @@ class VentanaPrueba(tk.Toplevel):
         self.canvas.create_text(center_x, center_y, text=texto,
                                 font=("Arial", 48), fill="white",
                                 anchor=tk.CENTER)
+        
+        Sujeto = input('Ingrese numero de participante:')
+        Ojo = input('Ojo Derecho/Izquierdo:')
+        # Agrego los estimulos no detectados a la lista Estimulos_grafica
+        for x,y in estimulo_no_detectado:
+            Estimulos_grafica.append([x,y])
+        # cuento la frecuencia de cada par xy
+        vector = [tuple(coord) for coord in Estimulos_grafica]
+        frecuencias = Counter(vector)
+        # Convierto los datos en una tabla
+        datos = [(x,y,freq-1) for (x,y),freq in frecuencias.items()]
+        tabla = pd.DataFrame(datos, columns=['coordenada x [mm]',
+                                             'coordenada y [mm]',
+                                             'frecuencia de fallos'])
+        #Guardo los datos en un archivo .csv
+        tabla.to_csv(f'Pruebas\Pruebas subjetivas\Sujeto_{Sujeto}_{Ojo}.csv',index = False, sep=';')
+
+        #Llamo a la función de gráfica
+        self.Grafica_resultado(Sujeto,Ojo,estimulo_no_detectado)
+
+
+            
+
 
 #_____________________VENTANA USUARIO_____________________
 
