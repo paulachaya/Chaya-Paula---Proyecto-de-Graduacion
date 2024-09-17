@@ -87,12 +87,15 @@ class VentanaPrueba(tk.Toplevel):
         monitores = get_monitors()
         if len(monitores) > 1:
             segundo_monitor = monitores[1]
+            print(segundo_monitor.width,segundo_monitor.height)
+            
             self.geometry(f"{segundo_monitor.width}x{segundo_monitor.height}+{segundo_monitor.x}+{segundo_monitor.y}")
 
         self.canvas = tk.Canvas(self, width=segundo_monitor.width,
                                 height=segundo_monitor.height,
                                 bg='black')
         self.canvas.pack()
+    
 
     # __ Funcion para generar sonido en la prueba __
     def beep1(self):
@@ -112,7 +115,6 @@ class VentanaPrueba(tk.Toplevel):
     # __ Función de la prueba __
     def prueba(self):
         # Genero vector con estímulos
-#        Estimulos,estimulos = [],[]
         estimulos = []
         radios,lim1,lim2,num_puntos = np.arange(7, 22, 3), -np.pi / 4, np.pi / 4, 3
         for i in range(len(radios)):
@@ -120,44 +122,58 @@ class VentanaPrueba(tk.Toplevel):
                                                  num_puntos, centro=(0, 0))
             num_puntos = num_puntos + 2
             for i in range(1,len(x)):
-#                Estimulos.append([x[i], y[i]])
                 estimulos.append([grados_a_mm(x[i]), grados_a_mm(y[i])])
-#                Estimulos.append([-x[i], -y[i]])
                 estimulos.append([grados_a_mm(-x[i]), grados_a_mm(-y[i])])
-        cantidad_total_estimulos = len(estimulos)
-        Xmin0, Ymin0 = np.min(estimulos, axis=0)
-        Xmax0, Ymax0 = np.max(estimulos, axis=0)     
-        print('Limites X:',Xmin0,Xmax0)
-        print('Limites Y:',Ymin0,Ymax0)
-        # Mezclar el vector de estimulos
-        np.random.shuffle(estimulos)
-
-        print('Cantidad de estimulos:',cantidad_total_estimulos)
 
         for k in range(3):
-#       ................................................................  
+#       ......................... TEXTO ...............................  
             print(f'Ronda {k+1}')
             texto = f'Ronda {k+1}'
-            center_x = self.canvas.winfo_width() // 2
-            center_y = self.canvas.winfo_height() // 2
+            center_x = self.canvas.winfo_screenwidth() /2
+            center_y = self.canvas.winfo_screenheight()/2
             self.canvas.create_text(center_x, center_y, text=texto,
                                     font=("Arial", 48), fill="white",
                                     anchor=tk.CENTER)
-            time.sleep(10)
+            time.sleep(2)
             self.canvas.delete('all')
 #       ...............................................................
+            cantidad_total_estimulos = len(estimulos)
+            Xmin, Ymin = np.min(estimulos, axis=0)
+            Xmax, Ymax = np.max(estimulos, axis=0) 
+            print('Limites X:',Xmin,Xmax)
+            print('Limites Y:',Ymin,Ymax)
+            # Mezclar el vector de estimulos
+            np.random.shuffle(estimulos)
+            print('Cantidad de estimulos:',cantidad_total_estimulos)
             estimulo_no_detectado, resultado_paciente = [], []
             largo, ancho = 30, 3
             num_prueba = 0
             ox,oy = 0,0 
-            x, y = estimulos[0][0], estimulos[0][1]
-            estimulos.pop(0)
             color = 'white'
-            print('Cantidad de estimulos para la ronda:', len(estimulos)+1)
             for i in range(cantidad_total_estimulos):
+                punto, indice = None, -1
+                for j, (X,Y) in enumerate(estimulos):
+                    if (Xmin < X < Xmax) and (Ymin < Y < Ymax):
+                        x,y = X ,Y
+                        punto, indice = (x,y), j
+                        break
+                if punto is not None:
+                    # Si se encontró un punto, se elimina de la lista
+                    estimulos.pop(indice)
+                    color = 'white'
+                    print(f'El primer punto dentro del rango es {punto}')
+                    print('cantidad de estimulos:',len(estimulos))
+                else:
+                    x,y = -ox,-oy
+                    color = 'red'
+                    print('No se encontró ningun punto dentro del rango')
                 time.sleep(0.5)
                 num_prueba += 1  # Para imprimir el número de prueba que estoy realizando
-
+                Xmin, Xmax = Xmin - x, Xmax - x
+                Ymin, Ymax = Ymin - y, Ymax - y
+                x,y = x+ox, y+oy
+                print('origen en', ox, oy)
+                print('Coordenada:',x,y)
                 # Grafico la cruz de fijación en la ventana de prueba
                 self.line1 = self.canvas.create_line(mm_a_px_X(ox)- largo, mm_a_px_Y(oy),
                                                     mm_a_px_X(ox)+largo, mm_a_px_Y(oy),
@@ -191,34 +207,17 @@ class VentanaPrueba(tk.Toplevel):
 
                     # Imprimo resultado
                     print(num_prueba, '/',cantidad_total_estimulos, ':', result)
-
                     # Defino nuevo origen de coordenadas
                     # y los nuevos límites
-                    ox, oy = x,y
-                    Xmin, Xmax = Xmin0 - ox, Xmax0 - ox
-                    Ymin, Ymax = Ymin0 - oy, Ymax0 - oy
-                    estimulos = [[x - ox, y - oy] for x, y in estimulos]
+
+                    ox, oy = x,y 
 
                     print('Nuevos límites X:',Xmin,Xmax)
                     print('Nuevos limites Y:',Ymin,Ymax)
                     # Busco el primer par (x,y) que se encuentre
                     # dentro de los nuevos límites
-                    punto, indice = None, -1
-                    for i, (X,Y) in enumerate(estimulos):
-                        if Xmin <= X <= Xmax and Ymin <= Y <= Ymax:
-                            x,y = X,Y
-                            punto, indice = (x,y), i
-                            break
-                    if punto is not None:
-                        # Si se encontró un punto, se elimina de la lista
-                        estimulos.pop(indice)
-                        color = 'white'
-                        print(f'El primer punto dentro del rango es {punto}')
-                        print('cantidad de estimulos:',len(estimulos))
-                    else:
-                        x,y = 0,0
-                        color = 'red'
-                        print('No se encontró ningun punto dentro del rango')
+                    
+                    
                       
             # Armo el nuevo patrón de estimulos
             estimulos = patron_nuevo(resultado_paciente)
