@@ -5,7 +5,7 @@ from matplotlib.patches import Circle
 import winsound
 import time
 
-# Funciones de conversion para las pruebas de deteccion
+#   Funciones de conversion para las pruebas de deteccion
 def px_a_mm_X(valor_en_px):
     return (0.3 * valor_en_px) - 195
 
@@ -30,19 +30,21 @@ def Varduino_a_mm_X(ordenada_x, pendiente_x, valor_arduino):
 def Varduino_a_mm_Y(ordenada_y, pendiente_y, valor_arduino):
     return ordenada_y + (valor_arduino * pendiente_y)
 
-# Funcion de analisis
+# Funcion de analisis prueba objetiva
 def analisis(estimulo_x,estimulo_y,valor_x,valor_y):
     if ((abs(valor_x - estimulo_x) < 30)
         and (abs(valor_y - estimulo_y) < 30)): 
         return 1  
     else:
         return 0
-# Funcion de validez
+
+# Funcion de validez prueba objetiva
 def validez_de_prueba(valor_x,valor_y):
     if (abs(valor_x)<30) and (abs(valor_y)<30):
         return 1
     else:
         return 0
+
 # Funcion para generar puntos para el patrón de estimulos
 def generar_puntos_circunferencia(radio, lim1, lim2, num_puntos, centro=(0, 0)):
     angulos = np.linspace(lim1, lim2, num_puntos, endpoint=False)  
@@ -78,7 +80,7 @@ def Grafica_resultado(Sujeto,Ojo,estimulo_no_detectado):
 
 # Funcion para generar sonido
 def beep1():
-    winsound.Beep(1000,100)
+    winsound.Beep(1000,500)
 def beep2():
         frequency = 2000  
         duration = 200  
@@ -139,3 +141,39 @@ def space_press():
     else:
         result = 0
     return result
+
+# Funcion lectura de arduino
+def lectura_arduino(etapa,rectas,queue):
+    print('Iniciando lectura de datos..."')
+    lectura = []
+    # Inicia el tiempo de lectura del arduino (4 segundos)
+    tiempo_inicio = time.time()
+    while (time.time() - tiempo_inicio) <= 4: 
+        #line = self.ser.readline().decode('utf-8',errors='ignore').strip()
+        line = "1,0"
+        if line:
+            valores = line.split(',')
+            # Verifico que la línea venga con dos valores (x,y) 
+            if len(valores)==2:
+                try:
+                    valores = [int(valor) for valor in valores]
+                    if etapa=='verificacion':
+                        # En la etapa de verificacion, se usan las rectas
+                        # calculadas anteriormente.
+                        #  rectas = [self.ord_x, self.pend_x, self.ord_y, self.pend_y]
+                        ord_x = rectas[0]
+                        pend_x = rectas[1]
+                        ord_y = rectas[2]
+                        pend_y = rectas[3]
+                        lectura.append([Varduino_a_mm_X(ord_x, pend_x, valores[0]),
+                                        Varduino_a_mm_Y(ord_y, pend_y, valores[1])]) 
+                    else:
+                        if len(lectura) > 50:
+                            lectura.pop(0)
+                        lectura.append([valores[0],valores[1]])
+                except ValueError:
+                        print("Error al convertir valores:", valores)
+    lectura = [np.mean([coord[0] for coord in lectura]), np.mean([coord[1] for coord in lectura])]
+    print(lectura)
+    print('Lectura de datos finalizada.')
+    queue.append(lectura)
