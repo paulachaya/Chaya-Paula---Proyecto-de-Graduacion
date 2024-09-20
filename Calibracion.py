@@ -1,17 +1,10 @@
-import multiprocessing.queues
 import serial
 import threading
 import tkinter as tk
-import time
 from screeninfo import get_monitors
 import numpy as np
 import csv
-import matplotlib.pyplot as plt
 import pandas as pd
-import queue
-import winsound
-from multiprocessing import Process
-import multiprocessing
 import Funciones as F
 
 
@@ -48,18 +41,7 @@ class Calibracion(tk.Tk):
                                                 width=pant_2.width, 
                                                 height=pant_2.height, 
                                                 bg='black')
-            self.ventana2.canvas.pack()
-            
-    #    self.ser = serial.Serial('COM6', 9600).
-    #    self.protocol("WM_DELETE_WINDOW", self.on_closing)
-
-#   Esta funcion se encarga de cerrar la conexion serial y destruir la ventana de Calibracion.
-    def on_closing(self): 
-        try:
-            self.ser.close()
-        except Exception as e:
-            print("Error closing serial connection:", e)
-        self.destroy()    
+            self.ventana2.canvas.pack() 
       
 #   Funcion para abrir la ventana de calibracion en el segundo monitor     
     def ventana_calibracion(self):

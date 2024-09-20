@@ -5,6 +5,7 @@ from matplotlib.patches import Circle
 import winsound
 import time
 import random as rd
+import serial
 
 #   Funciones de conversion para las pruebas de deteccion
 def px_a_mm_X(valor_en_px):
@@ -129,7 +130,7 @@ def patron_nuevo(resultado_paciente):
 def on_space_press(event):
     global space_pressed
     space_pressed = True
-def space_press():                  
+def space_press(resultado):                  
     global space_pressed
     space_pressed = False
     tiempo_inicio = time.time()
@@ -141,16 +142,17 @@ def space_press():
             break
     else:
         result = 0
-    return result
+    resultado = result
 
 # Funcion lectura de arduino
 def lectura_arduino(etapa,rectas,queue):
+    #ser = serial.Serial('COM6', 9600).
     print('Iniciando lectura de datos...')
     lectura = []
     # Inicia el tiempo de lectura del arduino (4 segundos)
     tiempo_inicio = time.time()
     while (time.time() - tiempo_inicio) <= 4: 
-        #line = self.ser.readline().decode('utf-8',errors='ignore').strip()
+        #line = ser.readline().decode('utf-8',errors='ignore').strip()
         v1,v2 = rd.randint(-450,450),rd.randint(-450,450)
         line = f'{v1},{v2}' 
         if line:
