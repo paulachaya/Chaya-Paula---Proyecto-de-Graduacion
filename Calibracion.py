@@ -22,7 +22,7 @@ class Calibracion(tk.Tk):
         # Obtengo los monitores conectados
         monitores = get_monitors()
         if len(monitores)>1:
-            segundo_monitor = monitores[1]
+            pant_2 = monitores[1] #Segunda pantalla
 
             # Defino titulo y dimensiones de la ventana 1
             self.title('Calibracion')
@@ -43,14 +43,13 @@ class Calibracion(tk.Tk):
             # Creo una segunda ventana
             self.ventana2 = tk.Toplevel(self)  
             self.ventana2.title('Calibracion')
-            self.ventana2.geometry(f"{segundo_monitor.width}x{segundo_monitor.height}+{segundo_monitor.x}+{segundo_monitor.y}")
+            self.ventana2.geometry(f"{pant_2.width}x{pant_2.height}+{pant_2.x}+{pant_2.y}")
             self.ventana2.canvas = tk.Canvas(self.ventana2,
-                                                width=segundo_monitor.width, 
-                                                height=segundo_monitor.height, 
+                                                width=pant_2.width, 
+                                                height=pant_2.height, 
                                                 bg='black')
             self.ventana2.canvas.pack()
             
-    #    self.resultados = []
     #    self.ser = serial.Serial('COM6', 9600).
     #    self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
@@ -69,16 +68,16 @@ class Calibracion(tk.Tk):
         # Mantengo el texto 3 segundos
         self.after(3000, lambda: self.borrar())
 
-
         # Una vez presentado el texto, 
         # arranco la funcion de calibracion.
         # Determino los valores de las variables.
-        self.puntos_calibracion = [[0,0],[75,75]]
+        self.puntos_cal = [[0,0],[75,75]]
         i = 0
-        self.datos_leidos = []
+        self.datos = []
         etapa = 'inicio'
-        self.after(6000, lambda: self.calibracion(self.puntos_calibracion,i,self.datos_leidos,etapa))
-
+        self.after(5000,lambda:print('Iniciando calibración... \n'))
+        self.after(6000, lambda: 
+                   self.calibracion(self.puntos_cal,i,self.datos,etapa))
 
 #   Funcion de texto    
     def texto_canvas(self,texto):
@@ -102,7 +101,7 @@ class Calibracion(tk.Tk):
 #   Funcion para borrar cualquier cosa que 
 #   esté en pantalla
     def borrar(self):
-        print('Borro')
+        print('\n')
         self.ventana2.canvas.delete('all')
                     
 #   Funcion de CALIBRACION: Esta funcion tiene
@@ -126,89 +125,123 @@ class Calibracion(tk.Tk):
             self.graficar(puntos[i])
             if etapa == 'verificacion':
                 # Uso los valores obtenidos de la funcion 'Obtencion_rectas'
-                valores_rectas = [self.ord_x, self.pend_x, self.ord_y, self.pend_y]
+                valores_rectas = [self.ord_x, self.pend_x, 
+                                  self.ord_y, self.pend_y]
             else:
                 valores_rectas = [0,0,0,0]
             # Hilo para realizar la lectura en paralelo con el gráfico
-            lectura_thread = threading.Thread(target=F.lectura_arduino, args=(etapa,valores_rectas,datos,))
+            lectura_thread = threading.Thread(target=F.lectura_arduino,
+                                              args=(etapa,valores_rectas,datos,))
             lectura_thread.start()
 
             # Borro el punto y llamo a la siguiente iteración después de 4 segundos
-            self.after(4000, lambda: self.borrar())  
-            self.after(4000, lambda: self.calibracion(puntos, i + 1,datos,etapa))
+            self.after(4500, lambda: self.borrar())  
+            self.after(5000, lambda: 
+                       self.calibracion(puntos, i + 1,datos,etapa))
 
         else:
             if etapa == 'inicio':
+                print(f'Datos leídos de inicio:\n {datos} \n')
+
                 # Una vez finalizado el primer bucle,
                 # utilizo la funcion 'Obtencion_rectas'
                 # para calcular las pendientes y ordenadas
                 # de las rectas de calibracion
-                self.Obtencion_rectas(self.datos_leidos)
+                self.Obtencion_rectas(datos)
+
                 # Una vez obtenidas las rectas de calibracion,
                 # utilizo la funcion de verificacion
-                self.after(1000,lambda:self.borrar())
-                self.after(1000, lambda: print('Iniciando verificación...'))
+                self.after(1000, lambda:
+                           print('\nIniciando verificación...\n'))
+
                 # Para la verificacion se realiza el mismo 
                 # mecanismo de mostrar puntos y obtener
                 # datos del Arduino en paralelo,
                 # por lo tanto se vuelve a llamar a la funcion
                 # pero con nuevos valores en las variables.
-                self.puntos_ver = [[60,60],[60,-60],[-60,-60],[-60,60]]
+                self.puntos_ver = [[60,60],[60,-60],
+                                   [-60,-60],[-60,60]]
                 i = 0
                 self.datos = []
                 etapa = 'verificacion'
-                self.after(2000, lambda: self.calibracion(self.puntos_ver,i,self.datos,etapa))
+                self.after(2000, lambda:
+                           self.calibracion(self.puntos_ver,0,self.datos,etapa))
             else:
+                #print(datos)
                 # Una vez finalizada la verificación, 
                 # se llama a la funcion de 'Calculo_de_distancias'
-                self.Calculo_de_distancias(self.datos)
+                self.Calculo_de_distancias(datos,self.puntos_ver)
             
+#   Funcion Obtencion_rectas: a partir de 
+#   los datos obtenidos por el Arduino, 
+#   se calculan las ordenadas y pendientes
+#   de las rectas de calibracion            
     def Obtencion_rectas(self,datos):
         # Los datos vienen en el siguiente formato
         # [[x1, y1], [x2, y2]]
         x1,x2 = [coord[0] for coord in datos]
         y1,y2 = [coord[1] for coord in datos]
-        print(x1,x2,y1,y2)
+        #print(x1,x2,y1,y2)
 
         # Obtengo las ordenadas y pendientes 
         # de las rectas de calibración
 
-        self.ord_x = -self.pend_x*x1
-        self.ord_y = -self.pend_y*y1
-
         self.pend_x = 75 / (x2-x1)
         self.pend_y = 75 / (y2-y1)
 
-        print(f"Ordenada y Pendiente de X: [{self.ord_x}, {self.pend_x}]")
+        self.ord_x = -self.pend_x*x1
+        self.ord_y = -self.pend_y*y1
+
+        print(f"\nOrdenada y Pendiente de X: [{self.ord_x}, {self.pend_x}]")
         print(f"Ordenada y Pendiente de Y: [{self.ord_y}, {self.pend_y}]")
+
+    # Funcion Calculo_de_distancias:
+    # Esta funcion evalua la distancia entre
+    # un determinado punto mostrado en pantalla y 
+    # la posicion de la mirada del sujeto
+    def Calculo_de_distancias(self, datos,puntos):   
+        # Los puntos y los datos tienen el siguiente formato
+        # puntos = [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
+        # Verifico que ambos arreglos tienen el mismo tamaño
+        if len(puntos)!= len(datos):
+            print('Faltan datos')
+        else:
+            Distancia = []
+            # Tengo que evaluar la distancia punto a punto
+            for i in range(len(puntos)):
+                pto_x, pto_y = puntos[i]
+                lectura_x, lectura_y = datos[i]
+
+                # Calculo la distancia
+                dist_x = pto_x - lectura_x
+                dist_y = pto_y - lectura_y
+                vector_distancia = np.array([dist_x,dist_y])
+                Distancia.append(np.linalg.norm(vector_distancia))
+
+            # Calculo el promedio de distancias
+            Distancia_promedio = np.mean(Distancia)
+            print(f'El Promedio de Distancias es: {Distancia_promedio}')
     
-    
-        
-#   Funcion GRAFICA: Esta funcion me muestra los puntos
-#   presentados en cada cuadrante y las posiciones del 
-#   ojo del participante durante la verificacion
-    def grafica_de_verificacion(self,lectura_X,lectura_Y,puntos):
-        # Grafico la prueba de verificacion
-        plt.figure(figsize=(10, 5))
-        for i in range(4):
-            valores_x = lectura_X[i]
-            valores_y = lectura_Y[i]
-            plt.scatter(valores_x, valores_y, marker='o',s=40, color='red')
-        plt.scatter([x for (x,y) in puntos],[y for (x,y) in puntos], marker='o',s=40, color='black')
-        plt.title('Resultados calibracion')
-        plt.xlim(-140, 140)
-        plt.ylim(-100, 100)
-        plt.show()
-    
-#   Una vez obtenida la grafica de verificacion, si se presiona
+#   Funcion guardar_calibracion:
+#   Una vez obtenida la Distancia Promedio, si se presiona
 #   el boton de 'Guardar calibracion', los datos de las rectas
 #   se guardan en un archivo .csv
     def Guardar_calibracion(self):
+        # valores_rectas tiene el siguiente formato
+        val_rectas = [self.ord_x, self.pend_x,
+                      self.ord_y, self.pend_y]
         with open('calibracion.csv', mode='w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(['Ordenada X', 'Pendiente X', 'Ordenada Y', 'Pendiente Y'])
-            writer.writerow([self.resultados[2], self.resultados[0], self.resultados[3], self.resultados[1]])
+            writer = csv.writer(file,delimiter=';')
+            writer.writerow(['Ordenada X',
+                             'Pendiente X',
+                             'Ordenada Y', 
+                             'Pendiente Y'])
+            writer.writerow([val_rectas[0],
+                             val_rectas[1],
+                             val_rectas[2],
+                             val_rectas[3]])
         print("Calibración guardada en calibracion.csv")
+        self.after(1000, lambda: self.destroy())
     
 def main():
     app = Calibracion()
