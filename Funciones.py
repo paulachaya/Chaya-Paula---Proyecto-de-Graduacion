@@ -82,7 +82,7 @@ def Grafica_resultado(Sujeto,Ojo,estimulo_no_detectado):
 
 # Funcion para generar sonido
 def beep1():
-    winsound.Beep(1000,500)
+    winsound.Beep(1000,300)
 def beep2():
         frequency = 2000  
         duration = 200  
@@ -90,22 +90,22 @@ def beep2():
             winsound.Beep(frequency, duration)
             time.sleep(1)
 
-# Funcion para generar un patron de estimulos
-def Patron_estimulos(radios,lim1,lim2,num_puntos):
-    estimulos = [],[]
+# Funcion para generar un patron de vectores
+def Patron_vectores(radios,lim1,lim2,num_puntos):
+    vectores = []
    # radios,lim1,lim2,num_puntos = np.arange(7, 22, 3), -np.pi / 4, np.pi / 4, 3
     for r in radios:
         x, y = generar_puntos_circunferencia(r, lim1, lim2,
                                             num_puntos, centro=(0, 0))
         num_puntos = num_puntos + 2
         for i in range(1,len(x)):
-            estimulos.append([grados_a_mm(x[i]), grados_a_mm(y[i])])
-            estimulos.append([grados_a_mm(-x[i]), grados_a_mm(-y[i])])
-    return estimulos
+            vectores.append([grados_a_mm(x[i]), grados_a_mm(y[i])])
+            vectores.append([grados_a_mm(-x[i]), grados_a_mm(-y[i])])
+    return vectores
 
-# Funcion para filtrar el patrón de estimulos
+# Funcion para filtrar el patrón de vectores
 def patron_nuevo(resultado_paciente):
-    patron_nuevo_estimulos = []
+    patron_nuevo = []
     for i in range(len(resultado_paciente)):
         x = [coord[0] for coord in resultado_paciente][i]
         y = [coord[1] for coord in resultado_paciente][i]
@@ -115,16 +115,16 @@ def patron_nuevo(resultado_paciente):
                 diferencia = [abs([coord[0] for coord in resultado_paciente][j]-x),
                               abs([coord[1] for coord in resultado_paciente][j]-y)]
                 if (np.linalg.norm(diferencia))<grados_a_mm(3.5):
-                    patron_nuevo_estimulos.append([[coord[0] for coord in resultado_paciente][j],
+                    patron_nuevo.append([[coord[0] for coord in resultado_paciente][j],
                                                    [coord[1] for coord in resultado_paciente][j]])
         else:
             if resultado_paciente[i][-1:][0]== 'No válido':
-                patron_nuevo_estimulos.append([x,y])    
+                patron_nuevo.append([x,y])    
     # Convertir la lista a un conjunto de tuplas para eliminar duplicados
-    estimulos = list(set(tuple(vector) for vector in patron_nuevo_estimulos))
+    vectores = list(set(tuple(vector) for vector in patron_nuevo))
     # Convertir de nuevo a una lista de listas si es necesario
-    estimulos = [list(vector) for vector in estimulos]
-    return estimulos
+    vectores = [list(vector) for vector in vectores]
+    return vectores
 
 # Funciones para presionar la barra espaciadora
 def on_space_press(event):
