@@ -60,7 +60,7 @@ class Pruebas(tk.Tk):
                                             F.mm_a_px_Y(y)-5,
                                             F.mm_a_px_X(x)+5,
                                             F.mm_a_px_Y(y)+5,
-                                            fill='white')
+                                            fill=self.color)
         # La función se vuelve a llamar para cada punto de la lista
         print('Se presentó punto a distancia:',x,y)    
 
@@ -96,7 +96,6 @@ class Pruebas(tk.Tk):
 #   Funcion para borrar cualquier cosa que 
 #   esté en pantalla.
     def borrar(self):
-        print('\n')
         self.ventana2.canvas.delete('all')
 
 #   Función para elegir un vector de 
@@ -117,7 +116,6 @@ class Pruebas(tk.Tk):
             vectores.pop(indice)
             self.color = 'white'
             print(f'El primer vector dentro del rango es {vector}')
-            print('cantidad de vectores:',len(vectores))
         else:
             # Si no se encontró un vector, se define uno
             # hacia el origen
@@ -143,15 +141,17 @@ class Pruebas(tk.Tk):
         self.after(2000, lambda: self.borrar())
        
         # Genero el patrón de vectores incial
-        radios,lim1,lim2,num_puntos = np.arange(7, 22, 3), -np.pi / 4, np.pi / 4, 3
+        radios = np.arange(7, 22, 3)
+        lim1, lim2 = -np.pi / 4, np.pi / 4
+        num_puntos = 3
         Vectores = F.Patron_vectores(radios,lim1,lim2,num_puntos)
+
         # Se mezcla la lista para que los vectores
         # se presenten de forma aleatoria
         np.random.shuffle(Vectores)
 
         # Determino la cantidad total de Vectores
-        cantidad_total_vectores = len(Vectores)
-        print('Cantidad total de vectores:', cantidad_total_vectores)
+        self.cantidad_total_vectores = len(Vectores)
 
         # Determino los límites de la pantalla,
         # es decir, las distancias maximas y minimas 
@@ -175,6 +175,7 @@ class Pruebas(tk.Tk):
                                                      self.datos,
                                                      self.vect_no_percibidos,
                                                      tipo))
+        
               
 #   Función 'Iniciar Prueba': Muestra los puntos
 #   y cruces en pantalla y guarda los resultados
@@ -186,8 +187,8 @@ class Pruebas(tk.Tk):
         #       a) para tipo 'Eyetracker': obtiene los datos del arduino. 
         #       b) para tipo 'Teclado': Obtiene a informacion de la barra
         #          espaciadora.
-        if i < cant_total:
-
+        if i < self.cantidad_total_vectores:
+            
             # Grafica la cruz en el origen de coordenadas
             print('Grafico cruz de fijación.')
             self.graficar_cruz(self.largo,
@@ -198,15 +199,37 @@ class Pruebas(tk.Tk):
             # elijo la distancia o vector (x,y)
             dist_x, dist_y = self.Aleatorio(distancias)
 
-            # Emito sonido para avisar que comienza la lectura.
-            # Grafico el punto.
+            # La cruz tarda 1 segundo en achicarse
+            # Luego de 1s, emito sonido para avisar
+            # que aparecerá el punto
             self.after(1000, lambda: F.beep1())
+
+            # Luego del sonido, grafico el punto en pantalla
+            self.after(1200, lambda: print(f'Punto: {dist_x,dist_y}'))
             self.after(1300, lambda: self.graficar((dist_x,dist_y)))
-             
+
+            if tipo=='Teclado':
+                self.resultado = 0
+                teclado = threading.Thread(target=self.teclado,
+                                           args=(i,))
+                teclado.start()
+
+            # El punto se borra a los 200 ms
             self.after(1500, lambda: self.borrar())
-            self.after(2000, lambda: self.Iniciar_prueba(cant_total,
-                                                         distancias,
-                                                         i+1,datos,
+
+            # Luego de 2 segundos, se determina
+            # si se presionó la barra en la prueba
+            self.after(2000, lambda: 
+                       self.analisis_respuesta_teclado(self.resultado,
+                                                        self.color,
+                                                        dist_x,
+                                                        dist_y))
+            
+            # Terminada la lectura, el nuevo origen será 
+            # la coordenada del vector (x,y)
+            # Se llama a la funcion nuevamente
+            self.after(2500, lambda: self.Iniciar_prueba(distancias,
+                                                         ox,oy, i+1,
                                                          vect_no_percibidos,
                                                          tipo))
             self.ox, self.oy = dist_x, dist_y
@@ -214,7 +237,29 @@ class Pruebas(tk.Tk):
             print('Fin')
             self.texto_canvas('Fin')
 
-def main():
+    def teclado(self,i):
+        tiempo = time.time()
+        print('arranco')
+        while (time.time() - tiempo) <= 3:
+            try:
+                if keyboard.is_pressed('space'):
+                    self.resultado = 1
+                    print('tecla presionada')
+                    time.sleep(0.5)
+                    break
+            except:
+                break
+        print(f'{i}/{self.cantidad_total_vectores}:{self.resultado}\n')
+
+
+    def analisis_respuesta_teclado(self,resultado,color,dist_x,dist_y):
+        if color == 'white':              
+                print(resultado)
+                if resultado == 0: # no detectó el estímulo
+                    #self.vect_no_detectado.append([dist_x-self.ox, dist_y-self.oy])
+                    print(f'Vector ({dist_x, dist_y}) no percibido.)')
+
+def main(): 
     app = Pruebas()
     app.mainloop()
 if __name__ == '__main__':
