@@ -7,6 +7,7 @@ import csv
 import pandas as pd
 import Funciones as F
 import time
+import keyboard
 
 class Pruebas(tk.Tk):
     def __init__(self):
@@ -61,8 +62,8 @@ class Pruebas(tk.Tk):
                                             F.mm_a_px_X(x)+5,
                                             F.mm_a_px_Y(y)+5,
                                             fill=self.color)
-        # La función se vuelve a llamar para cada punto de la lista
-        print('Se presentó punto a distancia:',x,y)    
+    
+    
 
 #   Funcion para graficar cruz de fijación.
     def graficar_cruz(self,largo,ancho,color):
@@ -130,7 +131,7 @@ class Pruebas(tk.Tk):
         
         self.dist_xmin, self.dist_xmax = self.dist_xmin - x, self.dist_xmax - x
         self.dist_ymin, self.dist_ymax = self.dist_ymin - y, self.dist_ymax - y
-        x,y = x+self.ox, y+self.oy
+        #x,y = x+self.ox, y+self.oy
         return x,y
 
 #   Funcion de Pruebas:
@@ -158,8 +159,6 @@ class Pruebas(tk.Tk):
         # que puedo presentar en pantalla
         self.dist_xmin, self.dist_ymin = np.min(Vectores, axis=0)
         self.dist_xmax, self.dist_ymax = np.max(Vectores, axis=0) 
-        print('Limites X:', self.dist_xmin, self.dist_xmax)
-        print('Limites Y:', self.dist_ymin, self.dist_ymax)
             
         # Defino las variables para las gráficas
         self.largo,self.ancho,self.color = 30, 3, 'white'
@@ -169,10 +168,8 @@ class Pruebas(tk.Tk):
         self.ox,self.oy = 0,0 
         self.datos = []
         self.vect_no_percibidos = []
-        self.after(4000, lambda: self.Iniciar_prueba(cantidad_total_vectores,
-                                                     Vectores,
+        self.after(4000, lambda: self.Iniciar_prueba(Vectores,
                                                      i,
-                                                     self.datos,
                                                      self.vect_no_percibidos,
                                                      tipo))
         
@@ -180,7 +177,7 @@ class Pruebas(tk.Tk):
 #   Función 'Iniciar Prueba': Muestra los puntos
 #   y cruces en pantalla y guarda los resultados
 #   (es decir, si el sujeto percibió o no los puntos)
-    def Iniciar_prueba(self,cant_total,distancias,i,datos,vect_no_percibidos,tipo):
+    def Iniciar_prueba(self,distancias,i,vect_no_percibidos,tipo):
         # Por cada Vector (x,y) , voy a llamar a dos funciones en paralelo:
         #   1) funcion GRAFICAR: grafica el punto en pantalla.
         #   2) funcion de respuesta:
@@ -190,22 +187,22 @@ class Pruebas(tk.Tk):
         if i < self.cantidad_total_vectores:
             
             # Grafica la cruz en el origen de coordenadas
-            print('Grafico cruz de fijación.')
+            print(f'Cruz en:{self.ox},{self.oy}.')
             self.graficar_cruz(self.largo,
                                self.ancho,
                                self.color)
 
             # Con la funcion Aleatorio
             # elijo la distancia o vector (x,y)
-            dist_x, dist_y = self.Aleatorio(distancias)
-
+            vector_x, vector_y = self.Aleatorio(distancias)
+            dist_x,dist_y = vector_x + self.ox, vector_y + self.oy
+            print(f'Se grafica el vector a distancia {dist_x},{dist_y}')
             # La cruz tarda 1 segundo en achicarse
             # Luego de 1s, emito sonido para avisar
             # que aparecerá el punto
             self.after(1000, lambda: F.beep1())
 
             # Luego del sonido, grafico el punto en pantalla
-            self.after(1200, lambda: print(f'Punto: {dist_x,dist_y}'))
             self.after(1300, lambda: self.graficar((dist_x,dist_y)))
 
             if tipo=='Teclado':
@@ -219,23 +216,25 @@ class Pruebas(tk.Tk):
 
             # Luego de 2 segundos, se determina
             # si se presionó la barra en la prueba
-            self.after(2000, lambda: 
-                       self.analisis_respuesta_teclado(self.resultado,
-                                                        self.color,
-                                                        dist_x,
-                                                        dist_y))
+            self.after(2500, lambda: 
+                       self.analisis_respuesta_teclado(self.color,
+                                                        vector_x,
+                                                        vector_y))
             
             # Terminada la lectura, el nuevo origen será 
             # la coordenada del vector (x,y)
             # Se llama a la funcion nuevamente
-            self.after(2500, lambda: self.Iniciar_prueba(distancias,
-                                                         ox,oy, i+1,
+            self.after(3000, lambda: self.Iniciar_prueba(distancias,
+                                                         i+1,
                                                          vect_no_percibidos,
                                                          tipo))
-            self.ox, self.oy = dist_x, dist_y
         else:
             print('Fin')
             self.texto_canvas('Fin')
+        
+        self.ox, self.oy = dist_x, dist_y
+
+
 
     def teclado(self,i):
         tiempo = time.time()
@@ -244,20 +243,19 @@ class Pruebas(tk.Tk):
             try:
                 if keyboard.is_pressed('space'):
                     self.resultado = 1
-                    print('tecla presionada')
+                    print('Tecla presionada.\n')
                     time.sleep(0.5)
                     break
             except:
                 break
-        print(f'{i}/{self.cantidad_total_vectores}:{self.resultado}\n')
+        print(f'{i+1}/{self.cantidad_total_vectores}:{self.resultado}\n')
 
 
-    def analisis_respuesta_teclado(self,resultado,color,dist_x,dist_y):
+    def analisis_respuesta_teclado(self,color,vector_x,vector_y):
         if color == 'white':              
-                print(resultado)
-                if resultado == 0: # no detectó el estímulo
+                if self.resultado == 0: # no detectó el estímulo
                     #self.vect_no_detectado.append([dist_x-self.ox, dist_y-self.oy])
-                    print(f'Vector ({dist_x, dist_y}) no percibido.)')
+                    print(f'Vector {vector_x,vector_y} no percibido.\n')
 
 def main(): 
     app = Pruebas()

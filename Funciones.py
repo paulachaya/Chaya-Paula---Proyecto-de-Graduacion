@@ -6,6 +6,7 @@ import winsound
 import time
 import random as rd
 import serial
+import keyboard
 
 #   Funciones de conversion para las pruebas de deteccion
 def px_a_mm_X(valor_en_px):
@@ -146,6 +147,7 @@ def space_press(resultado):
 
 # Funcion lectura de arduino
 def lectura_arduino(etapa,rectas,queue):
+
     #ser = serial.Serial('COM6', 9600).
     print('Iniciando lectura de datos...')
     lectura = []
@@ -181,3 +183,18 @@ def lectura_arduino(etapa,rectas,queue):
     print(lectura)
     print('Lectura de datos finalizada.')
     queue.append(lectura)
+
+
+def teclado(i, cant_total,resultado):
+    tiempo = time.time()
+    print('arranco')
+    while (time.time() - tiempo) <= 3:
+        try:
+            if keyboard.is_pressed('space'):
+                resultado = 1
+                print('tecla presionada')
+                time.sleep(0.5)
+                break
+        except:
+            break
+    print(f'{i}/{cant_total}:{resultado}\n')
