@@ -1,4 +1,3 @@
-import serial
 import threading
 import tkinter as tk
 from screeninfo import get_monitors
@@ -6,6 +5,8 @@ import numpy as np
 import csv
 import pandas as pd
 import Funciones as F
+import PupilCore as PC
+
 
 
 class Calibracion(tk.Tk):
@@ -112,13 +113,13 @@ class Calibracion(tk.Tk):
             else:
                 valores_rectas = [0,0,0,0]
             # Hilo para realizar la lectura en paralelo con el gráfico
-            lectura_thread = threading.Thread(target=F.lectura_arduino,
-                                              args=(etapa,valores_rectas,datos,))
+            lectura_thread = threading.Thread(target=PC.lectura,
+                                              args=(4,etapa,valores_rectas,datos))
             lectura_thread.start()
 
             # Borro el punto y llamo a la siguiente iteración después de 4 segundos
-            self.after(4500, lambda: self.borrar())  
-            self.after(5000, lambda: 
+            self.after(5000, lambda: self.borrar())  
+            self.after(6000, lambda: 
                        self.calibracion(puntos, i + 1,datos,etapa))
 
         else:
@@ -224,7 +225,9 @@ class Calibracion(tk.Tk):
                              val_rectas[3]])
         print("Calibración guardada en calibracion.csv")
         self.after(1000, lambda: self.destroy())
-    
+
+   
+
 def main():
     app = Calibracion()
     app.mainloop()

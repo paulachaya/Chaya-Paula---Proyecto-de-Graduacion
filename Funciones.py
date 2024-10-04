@@ -27,10 +27,10 @@ def grados_a_mm(valor):
 def mm_a_grados(valor):
     return(valor/5.25)
 
-def Varduino_a_mm_X(ordenada_x, pendiente_x, valor_arduino):
+def valor_eyetracker_a_mm_X(ordenada_x, pendiente_x, valor_arduino):
     return ordenada_x + (valor_arduino * pendiente_x)
 
-def Varduino_a_mm_Y(ordenada_y, pendiente_y, valor_arduino):
+def valor_eyetracker_a_mm_Y(ordenada_y, pendiente_y, valor_arduino):
     return ordenada_y + (valor_arduino * pendiente_y)
 
 # Funcion de analisis prueba objetiva
@@ -171,8 +171,8 @@ def lectura_arduino(etapa,rectas,queue):
                         pend_x = rectas[1]
                         ord_y = rectas[2]
                         pend_y = rectas[3]
-                        lectura.append([Varduino_a_mm_X(ord_x, pend_x, valores[0]),
-                                        Varduino_a_mm_Y(ord_y, pend_y, valores[1])]) 
+                        lectura.append([valor_eyetracker_a_mm_X(ord_x, pend_x, valores[0]),
+                                        valor_eyetracker_a_mm_Y(ord_y, pend_y, valores[1])]) 
                     else:
                         if len(lectura) > 50:
                             lectura.pop(0)
