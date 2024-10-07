@@ -27,11 +27,11 @@ def grados_a_mm(valor):
 def mm_a_grados(valor):
     return(valor/5.25)
 
-def valor_eyetracker_a_mm_X(ordenada_x, pendiente_x, valor_arduino):
-    return ordenada_x + (valor_arduino * pendiente_x)
+def valor_eyetracker_a_mm_X(ord_x, pend_x, valor):
+    return ord_x + (valor * pend_x)
 
-def valor_eyetracker_a_mm_Y(ordenada_y, pendiente_y, valor_arduino):
-    return ordenada_y + (valor_arduino * pendiente_y)
+def valor_eyetracker_a_mm_Y(ord_y, pend_y, valor):
+    return ord_y + (valor * pend_y)
 
 # Funcion de analisis prueba objetiva
 def analisis(estimulo_x,estimulo_y,valor_x,valor_y):
@@ -163,7 +163,7 @@ def lectura_arduino(etapa,rectas,queue):
             if len(valores)==2:
                 try:
                     valores = [int(valor) for valor in valores]
-                    if etapa=='verificacion':
+                    if etapa=='validacion':
                         # En la etapa de verificacion, se usan las rectas
                         # calculadas anteriormente.
                         #  rectas = [self.ord_x, self.pend_x, self.ord_y, self.pend_y]

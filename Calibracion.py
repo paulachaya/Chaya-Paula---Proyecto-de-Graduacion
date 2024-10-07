@@ -1,3 +1,7 @@
+# El siguiente código trabaja con la clase
+# 'Calibracion' para crear una interfaz gráfica
+# para la función.
+
 import threading
 import tkinter as tk
 from screeninfo import get_monitors
@@ -5,7 +9,8 @@ import numpy as np
 import csv
 import pandas as pd
 import Funciones as F
-import PupilCore as PC
+import Lectura_PupilCapture as PC
+from sklearn.linear_model import LinearRegression
 
 
 
@@ -18,23 +23,24 @@ class Calibracion(tk.Tk):
         if len(monitores)>1:
             pant_2 = monitores[1] #Segunda pantalla
 
+            #............VENTANA 1.............
             # Defino titulo y dimensiones de la ventana 1
             self.title('Calibracion')
             self.geometry('300x200')
 
-            # Genero un botón para abrir una ventana en el segundo monitor para iniciar la calibracion
+            # Botón para iniciar la calibracion
             self.boton_calibracion = tk.Button(self,
                                                text='Iniciar Calibración',
                                                command = lambda: self.ventana_calibracion())
             self.boton_calibracion.pack(pady=20)
         
-            # Genero un boton para guardar los datos de calibracion
+            # Botón para guardar los datos de calibracion
             self.boton_guardar = tk.Button(self,
                                            text='Guardar Calibración',
                                            command = lambda: self.Guardar_calibracion())
             self.boton_guardar.pack(pady=20)
 
-            # Creo una segunda ventana
+            # ............VENTANA 2................
             self.ventana2 = tk.Toplevel(self)  
             self.ventana2.title('Calibracion')
             self.ventana2.geometry(f"{pant_2.width}x{pant_2.height}+{pant_2.x}+{pant_2.y}")
@@ -44,7 +50,7 @@ class Calibracion(tk.Tk):
                                                 bg='black')
             self.ventana2.canvas.pack() 
       
-#   Funcion para abrir la ventana de calibracion en el segundo monitor     
+#   Funcion para iniciar calibracion en el segundo monitor     
     def ventana_calibracion(self):
         # Genero texto dentro del canvas 
         self.texto_canvas('Calibración')
@@ -54,10 +60,14 @@ class Calibracion(tk.Tk):
         # Una vez presentado el texto, 
         # arranco la funcion de calibracion.
         # Determino los valores de las variables.
-        self.puntos_cal = [[0,0],[75,75]]
+        self.puntos_cal = [[0,0],
+                           [10,10],
+                           [20,-20],
+                           [-30,-30],
+                           [-40,40]] #puntos para calibrar
         i = 0
-        self.datos = []
-        etapa = 'inicio'
+        self.datos = [] # lista para guardar datos
+        etapa = 'calibracion'
         self.after(5000,lambda:print('Iniciando calibración... \n'))
         self.after(6000, lambda: 
                    self.calibracion(self.puntos_cal,i,self.datos,etapa))
@@ -91,7 +101,7 @@ class Calibracion(tk.Tk):
 #   dos instancias:
 #   1°) Calibracion: muestra dos puntos en pantalla 
 #       para obtener las rectas de calibracion.
-#   2°) Verificacion: con las rectas obtenidas,
+#   2°) Validacion: con las rectas obtenidas,
 #       muestra un punto en cada cuadrante y analiza
 #       la distancia entre el punto y la posicion
 #       en pantalla del ojo del participante.
@@ -99,32 +109,36 @@ class Calibracion(tk.Tk):
     def calibracion(self,puntos,i,datos,etapa):
         # Por cada punto, voy a llamar a dos funciones en paralelo:
         #   1) funcion GRAFICAR: grafica el punto en pantalla.
-        #   2) funcion LECTURA: obtiene los datos del arduino. 
+        #   2) funcion LECTURA: obtiene los datos del eyetracker. 
                
         if i < len(puntos):
             # Emito sonido para avisar que comienza la lectura.
             F.beep1()         
             # Grafico el punto.
             self.graficar(puntos[i])
-            if etapa == 'verificacion':
+
+
+            if etapa == 'validacion':
                 # Uso los valores obtenidos de la funcion 'Obtencion_rectas'
                 valores_rectas = [self.ord_x, self.pend_x, 
                                   self.ord_y, self.pend_y]
             else:
                 valores_rectas = [0,0,0,0]
+
+
             # Hilo para realizar la lectura en paralelo con el gráfico
-            lectura_thread = threading.Thread(target=PC.lectura,
+            lectura_thread = threading.Thread(target=PC.Lectura_PupilCapture,
                                               args=(4,etapa,valores_rectas,datos))
             lectura_thread.start()
 
-            # Borro el punto y llamo a la siguiente iteración después de 4 segundos
+            # Borro el punto y llamo a la siguiente iteración después de 6 segundos
             self.after(5000, lambda: self.borrar())  
             self.after(6000, lambda: 
                        self.calibracion(puntos, i + 1,datos,etapa))
 
         else:
-            if etapa == 'inicio':
-                print(f'Datos leídos de inicio:\n {datos} \n')
+            if etapa == 'calibracion':
+                print(f'Datos leídos de calibración:\n {datos} \n')
 
                 # Una vez finalizado el primer bucle,
                 # utilizo la funcion 'Obtencion_rectas'
@@ -135,25 +149,27 @@ class Calibracion(tk.Tk):
                 # Una vez obtenidas las rectas de calibracion,
                 # utilizo la funcion de verificacion
                 self.after(1000, lambda:
-                           print('\nIniciando verificación...\n'))
+                           print('\nIniciando validación...\n'))
 
-                # Para la verificacion se realiza el mismo 
+                # Para la validación se realiza el mismo 
                 # mecanismo de mostrar puntos y obtener
-                # datos del Arduino en paralelo,
+                # datos del eyetracker en paralelo,
                 # por lo tanto se vuelve a llamar a la funcion
                 # pero con nuevos valores en las variables.
-                self.puntos_ver = [[60,60],[60,-60],
-                                   [-60,-60],[-60,60]]
+                self.puntos_validacion = [[50,50],[50,-50],
+                                          [-50,-50],[-50,50]]
                 i = 0
                 self.datos = []
-                etapa = 'verificacion'
+                etapa = 'validacion'
                 self.after(2000, lambda:
-                           self.calibracion(self.puntos_ver,0,self.datos,etapa))
+                           self.calibracion(self.puntos_validacion,
+                                            0,
+                                            self.datos,
+                                            etapa))
             else:
-                #print(datos)
-                # Una vez finalizada la verificación, 
-                # se llama a la funcion de 'Calculo_de_distancias'
-                self.Calculo_de_distancias(datos,self.puntos_ver)
+                # Una vez finalizada la validación, 
+                # se llama a la funcion de 'Cálculo_de_distancias'
+                self.Calculo_de_distancias(datos,self.puntos_validacion)
             
 #   Funcion Obtencion_rectas: a partir de 
 #   los datos obtenidos por el Arduino, 
@@ -161,25 +177,50 @@ class Calibracion(tk.Tk):
 #   de las rectas de calibracion            
     def Obtencion_rectas(self,datos):
         # Los datos vienen en el siguiente formato
-        # [[x1, y1], [x2, y2]]
-        x1,x2 = [coord[0] for coord in datos]
-        y1,y2 = [coord[1] for coord in datos]
+        # [[x1, y1], [x2, y2],...]
+        x_eyetracker = np.array([coord[0] for coord in datos])
+        y_eyetracker = np.array([coord[1] for coord in datos])
         #print(x1,x2,y1,y2)
+
+        # puntos de calibracion
+        x_cal = np.array([0.0,10.0,20.0,-30.0,-40.0])
+        y_cal = np.array([0.0,10.0,-20.0,-30.0,40.0])
+        # Crear modelo de regresion lineal
+        calibracion_x = LinearRegression()
+        calibracion_y = LinearRegression()
+        # Ajustar el modelo a los datos
+        calibracion_x.fit(x_cal.reshape(-1, 1), x_eyetracker)  # reshape para ajustar la dimensión
+        calibracion_y.fit(y_cal.reshape(-1, 1), y_eyetracker)
+
+        # Coeficientes obtenidos (pendiente y término independiente)
+        print('Calibracion en X')
+        print(f"Pendiente (m): {calibracion_x.coef_[0]}")
+        print(f"Intersección (b): {calibracion_x.intercept_}\n")
+
+        print('Calibracion en Y')
+        print(f"Pendiente (m): {calibracion_y.coef_[0]}")
+        print(f"Intersección (b): {calibracion_y.intercept_}\n")
+
+        self.pend_x = calibracion_x.coef_
+        self.ord_x = calibracion_x.intercept_
+        self.pend_y = calibracion_y.coef_
+        self.ord_y = calibracion_y.intercept_
+
 
         # Obtengo las ordenadas y pendientes 
         # de las rectas de calibración
 
-        self.pend_x = 75 / (x2-x1)
-        self.pend_y = 75 / (y2-y1)
+        #self.pend_x = 75 / (x2-x1)
+        #self.pend_y = 75 / (y2-y1)
 
-        self.ord_x = -self.pend_x*x1
-        self.ord_y = -self.pend_y*y1
+        #self.ord_x = -self.pend_x*x1
+        #self.ord_y = -self.pend_y*y1
 
-        print(f"\nOrdenada y Pendiente de X: [{self.ord_x}, {self.pend_x}]")
-        print(f"Ordenada y Pendiente de Y: [{self.ord_y}, {self.pend_y}]")
+        #print(f"\nOrdenada y Pendiente de X: [{self.ord_x}, {self.pend_x}]")
+        #print(f"Ordenada y Pendiente de Y: [{self.ord_y}, {self.pend_y}]")
 
     # Funcion Calculo_de_distancias:
-    # Esta funcion evalua la distancia entre
+    # Esta funcion evalúa la distancia entre
     # un determinado punto mostrado en pantalla y 
     # la posicion de la mirada del sujeto
     def Calculo_de_distancias(self, datos,puntos):   
@@ -211,18 +252,16 @@ class Calibracion(tk.Tk):
 #   se guardan en un archivo .csv
     def Guardar_calibracion(self):
         # valores_rectas tiene el siguiente formato
-        val_rectas = [self.ord_x, self.pend_x,
-                      self.ord_y, self.pend_y]
         with open('calibracion.csv', mode='w', newline='') as file:
             writer = csv.writer(file,delimiter=';')
             writer.writerow(['Ordenada X',
                              'Pendiente X',
                              'Ordenada Y', 
                              'Pendiente Y'])
-            writer.writerow([val_rectas[0],
-                             val_rectas[1],
-                             val_rectas[2],
-                             val_rectas[3]])
+            writer.writerow([self.ord_x,
+                             self.pend_x,
+                             self.ord_y,
+                             self.pend_y])
         print("Calibración guardada en calibracion.csv")
         self.after(1000, lambda: self.destroy())
 
