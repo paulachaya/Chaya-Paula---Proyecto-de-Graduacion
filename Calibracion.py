@@ -9,7 +9,7 @@ import numpy as np
 import csv
 import pandas as pd
 import Funciones as F
-import Lectura_PupilCapture as PC
+#import Lectura_PupilCapture as PC
 from sklearn.linear_model import LinearRegression
 
 
@@ -53,7 +53,7 @@ class Calibracion(tk.Tk):
 #   Funcion para iniciar calibracion en el segundo monitor     
     def ventana_calibracion(self):
         # Genero texto dentro del canvas 
-        self.texto_canvas('Calibración')
+        self.texto_canvas('Iniciando Calibración...')
         # Mantengo el texto 3 segundos
         self.after(3000, lambda: self.borrar())
 
@@ -61,14 +61,14 @@ class Calibracion(tk.Tk):
         # arranco la funcion de calibracion.
         # Determino los valores de las variables.
         self.puntos_cal = [[0,0],
-                           [10,10],
-                           [20,-20],
-                           [-30,-30],
+                           [60,60],
+                           [40,-40],
+                           [-50,-50],
                            [-40,40]] #puntos para calibrar
         i = 0
         self.datos = [] # lista para guardar datos
         etapa = 'calibracion'
-        self.after(5000,lambda:print('Iniciando calibración... \n'))
+        self.after(5000,lambda:print('\nIniciando calibración... '))
         self.after(6000, lambda: 
                    self.calibracion(self.puntos_cal,i,self.datos,etapa))
 
@@ -89,12 +89,20 @@ class Calibracion(tk.Tk):
                                             F.mm_a_px_Y(y)+5,
                                             fill='white')
         # La función se vuelve a llamar para cada punto de la lista
-        print('Se graficó punto:',x,y)    
+        print(f'Punto en pantalla:({x},{y}) [mm]')
+
+        ###########################################################
+        # Valor normalizado
+        #x_px = F.mm_a_px_X(x)
+        #y_px = F.mm_a_px_Y(y)
+        #x_norm = F.norm_x(x_px)
+        #y_norm = F.norm_y(y_px)
+        #print (f'Valor normalizado:({x_norm},{y_norm})\n')  
+        # #########################################################  
 
 #   Funcion para borrar cualquier cosa que 
 #   esté en pantalla
     def borrar(self):
-        print('\n')
         self.ventana2.canvas.delete('all')
                     
 #   Funcion de CALIBRACION: Esta funcion tiene
@@ -127,18 +135,18 @@ class Calibracion(tk.Tk):
 
 
             # Hilo para realizar la lectura en paralelo con el gráfico
-            lectura_thread = threading.Thread(target=PC.Lectura_PupilCapture,
-                                              args=(4,etapa,valores_rectas,datos))
+            lectura_thread = threading.Thread(target=F.lectura_arduino,
+                                              args=(3,etapa,valores_rectas,datos))
             lectura_thread.start()
 
             # Borro el punto y llamo a la siguiente iteración después de 6 segundos
-            self.after(5000, lambda: self.borrar())  
-            self.after(6000, lambda: 
+            self.after(4000, lambda: self.borrar())  
+            self.after(5000, lambda: 
                        self.calibracion(puntos, i + 1,datos,etapa))
 
         else:
             if etapa == 'calibracion':
-                print(f'Datos leídos de calibración:\n {datos} \n')
+                #print(f'Datos leídos de calibración:\n {datos} \n')
 
                 # Una vez finalizado el primer bucle,
                 # utilizo la funcion 'Obtencion_rectas'
@@ -149,7 +157,10 @@ class Calibracion(tk.Tk):
                 # Una vez obtenidas las rectas de calibracion,
                 # utilizo la funcion de verificacion
                 self.after(1000, lambda:
-                           print('\nIniciando validación...\n'))
+                           print('\nIniciando validación...'))
+                self.after(1500, lambda: 
+                           self.texto_canvas('Iniciando validación...'))
+                self.after(2500, lambda: self.borrar())
 
                 # Para la validación se realiza el mismo 
                 # mecanismo de mostrar puntos y obtener
@@ -161,7 +172,7 @@ class Calibracion(tk.Tk):
                 i = 0
                 self.datos = []
                 etapa = 'validacion'
-                self.after(2000, lambda:
+                self.after(3000, lambda:
                            self.calibracion(self.puntos_validacion,
                                             0,
                                             self.datos,
@@ -169,82 +180,100 @@ class Calibracion(tk.Tk):
             else:
                 # Una vez finalizada la validación, 
                 # se llama a la funcion de 'Cálculo_de_distancias'
-                self.Calculo_de_distancias(datos,self.puntos_validacion)
+                self.Calculo_de_errores(datos)
             
 #   Funcion Obtencion_rectas: a partir de 
 #   los datos obtenidos por el Arduino, 
 #   se calculan las ordenadas y pendientes
 #   de las rectas de calibracion            
     def Obtencion_rectas(self,datos):
+        print('\nObteniendo rectas de calibración...')
         # Los datos vienen en el siguiente formato
         # [[x1, y1], [x2, y2],...]
         x_eyetracker = np.array([coord[0] for coord in datos])
         y_eyetracker = np.array([coord[1] for coord in datos])
-        #print(x1,x2,y1,y2)
 
-        # puntos de calibracion
-        x_cal = np.array([0.0,10.0,20.0,-30.0,-40.0])
-        y_cal = np.array([0.0,10.0,-20.0,-30.0,40.0])
-        # Crear modelo de regresion lineal
+        #######################################################
+        # puntos de calibracion en mm
+        #for j,(x,y) in enumerate(self.puntos_cal):
+        #    x = F.norm_x(F.mm_a_px_X(x))
+        #    y = F.norm_y(F.mm_a_px_Y(y))
+        #    self.puntos_cal[j] = x,y
+        #######################################################
+
+
+        # Separo los valores de X e Y de los puntos
+        # de calibración
+        x = np.array([coord[0] for coord in self.puntos_cal])
+        y = np.array([coord[1] for coord in self.puntos_cal])
+        
+        # Crear modelo de regresion lineal para cada eje
         calibracion_x = LinearRegression()
         calibracion_y = LinearRegression()
+
         # Ajustar el modelo a los datos
-        calibracion_x.fit(x_cal.reshape(-1, 1), x_eyetracker)  # reshape para ajustar la dimensión
-        calibracion_y.fit(y_cal.reshape(-1, 1), y_eyetracker)
+        calibracion_x.fit(x.reshape(-1, 1), x_eyetracker)  # reshape para ajustar la dimensión
+        calibracion_y.fit(y.reshape(-1, 1), y_eyetracker)
 
         # Coeficientes obtenidos (pendiente y término independiente)
-        print('Calibracion en X')
+        print('\nCalibracion en X')
         print(f"Pendiente (m): {calibracion_x.coef_[0]}")
-        print(f"Intersección (b): {calibracion_x.intercept_}\n")
+        print(f"Intersección (b): {calibracion_x.intercept_}")
 
-        print('Calibracion en Y')
+        print('\nCalibracion en Y')
         print(f"Pendiente (m): {calibracion_y.coef_[0]}")
-        print(f"Intersección (b): {calibracion_y.intercept_}\n")
+        print(f"Intersección (b): {calibracion_y.intercept_}")
 
-        self.pend_x = calibracion_x.coef_
+        self.pend_x = calibracion_x.coef_[0]
         self.ord_x = calibracion_x.intercept_
-        self.pend_y = calibracion_y.coef_
+        self.pend_y = calibracion_y.coef_[0]
         self.ord_y = calibracion_y.intercept_
-
-
-        # Obtengo las ordenadas y pendientes 
-        # de las rectas de calibración
-
-        #self.pend_x = 75 / (x2-x1)
-        #self.pend_y = 75 / (y2-y1)
-
-        #self.ord_x = -self.pend_x*x1
-        #self.ord_y = -self.pend_y*y1
-
-        #print(f"\nOrdenada y Pendiente de X: [{self.ord_x}, {self.pend_x}]")
-        #print(f"Ordenada y Pendiente de Y: [{self.ord_y}, {self.pend_y}]")
 
     # Funcion Calculo_de_distancias:
     # Esta funcion evalúa la distancia entre
     # un determinado punto mostrado en pantalla y 
     # la posicion de la mirada del sujeto
-    def Calculo_de_distancias(self, datos,puntos):   
+    def Calculo_de_errores(self, datos):
+        
+        ###########################################################
+        # Normalizar los puntos (están en mm)
+        #for j, (x,y) in enumerate(self.puntos_validacion):
+        #    x = F.norm_x(F.mm_a_px_X(x))
+        #    y = F.norm_y(F.mm_a_px_Y(y))
+        #    self.puntos_validacion[j] = x,y
+        ###########################################################
+
+
         # Los puntos y los datos tienen el siguiente formato
-        # puntos = [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
+        # puntos/datos = [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
+
         # Verifico que ambos arreglos tienen el mismo tamaño
-        if len(puntos)!= len(datos):
+        if len(self.puntos_validacion)!= len(datos):
             print('Faltan datos')
+        
         else:
-            Distancia = []
+            error_x,error_y = [],[]
             # Tengo que evaluar la distancia punto a punto
-            for i in range(len(puntos)):
-                pto_x, pto_y = puntos[i]
+            for i in range(len(self.puntos_validacion)):
+                pto_x, pto_y = self.puntos_validacion[i]
                 lectura_x, lectura_y = datos[i]
 
-                # Calculo la distancia
-                dist_x = pto_x - lectura_x
-                dist_y = pto_y - lectura_y
-                vector_distancia = np.array([dist_x,dist_y])
-                Distancia.append(np.linalg.norm(vector_distancia))
+                # Calculo los errores en X e Y
+                error_x.append(np.abs(pto_x - lectura_x))
+                error_y.append(np.abs(pto_y - lectura_y))
 
-            # Calculo el promedio de distancias
-            Distancia_promedio = np.mean(Distancia)
-            print(f'El Promedio de Distancias es: {Distancia_promedio}')
+            # Obtengo el error promedio en cada eje
+            Error_promedio_x = np.mean(error_x)
+            Error_promedio_y = np.mean(error_y)
+
+            print(f'\nError Promedio (valores normalizados):\nEje X: {Error_promedio_x}\nEje Y: {Error_promedio_y}')
+            
+            #Errores en grados
+            Error_x_grados = F.mm_a_grados(Error_promedio_x)
+            Error_y_grados = F.mm_a_grados(Error_promedio_y)
+
+            print(f'\nError Promedio (grados):\nEje X: {Error_x_grados}\nEje Y: {Error_y_grados}')
+
     
 #   Funcion guardar_calibracion:
 #   Una vez obtenida la Distancia Promedio, si se presiona

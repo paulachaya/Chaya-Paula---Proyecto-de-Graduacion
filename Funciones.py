@@ -21,6 +21,13 @@ def mm_a_px_X(valor_en_mm):
 def mm_a_px_Y(valor_en_mm):
     return int((valor_en_mm - 105) / (-0.3))
 
+#def norm_x(valor_en_px):
+#    return 0.0008*valor_en_px
+
+#def norm_y(valor_en_px):
+#    return 0.0014*valor_en_px
+
+
 def grados_a_mm(valor):
     return valor*5.25
 
@@ -127,6 +134,8 @@ def patron_nuevo(resultado_paciente):
     vectores = [list(vector) for vector in vectores]
     return vectores
 
+
+#######################################################
 # Funciones para presionar la barra espaciadora
 def on_space_press(event):
     global space_pressed
@@ -144,19 +153,20 @@ def space_press(resultado):
     else:
         result = 0
     resultado = result
+#######################################################
+
 
 # Funcion lectura de arduino
-def lectura_arduino(etapa,rectas,queue):
-
-    #ser = serial.Serial('COM6', 9600).
-    print('Iniciando lectura de datos...')
+def lectura_arduino(tiempo,etapa,rectas,queue):
+    ser = serial.Serial('COM6', 9600)
+    #print('Iniciando lectura de datos...')
     lectura = []
     # Inicia el tiempo de lectura del arduino (4 segundos)
     tiempo_inicio = time.time()
-    while (time.time() - tiempo_inicio) <= 4: 
-        #line = ser.readline().decode('utf-8',errors='ignore').strip()
-        v1,v2 = rd.randint(-450,450),rd.randint(-450,450)
-        line = f'{v1},{v2}' 
+    while (time.time() - tiempo_inicio) <= tiempo: 
+        line = ser.readline().decode('utf-8',errors='ignore').strip()
+        #v1,v2 = rd.randint(-450,450),rd.randint(-450,450)
+        #line = f'{v1},{v2}' 
         if line:
             valores = line.split(',')
             # Verifico que la línea venga con dos valores (x,y) 
@@ -164,13 +174,10 @@ def lectura_arduino(etapa,rectas,queue):
                 try:
                     valores = [int(valor) for valor in valores]
                     if etapa=='validacion':
-                        # En la etapa de verificacion, se usan las rectas
+                        # En la etapa de validacion, se usan las rectas
                         # calculadas anteriormente.
                         #  rectas = [self.ord_x, self.pend_x, self.ord_y, self.pend_y]
-                        ord_x = rectas[0]
-                        pend_x = rectas[1]
-                        ord_y = rectas[2]
-                        pend_y = rectas[3]
+                        ord_x, pend_x, ord_y, pend_y = rectas
                         lectura.append([valor_eyetracker_a_mm_X(ord_x, pend_x, valores[0]),
                                         valor_eyetracker_a_mm_Y(ord_y, pend_y, valores[1])]) 
                     else:
@@ -180,8 +187,8 @@ def lectura_arduino(etapa,rectas,queue):
                 except ValueError:
                         print("Error al convertir valores:", valores)
     lectura = [np.mean([coord[0] for coord in lectura]), np.mean([coord[1] for coord in lectura])]
-    print(lectura)
-    print('Lectura de datos finalizada.')
+    print(f'Eyetracker:{lectura}\n')
+    #print('Lectura de datos finalizada.')
     queue.append(lectura)
 
 

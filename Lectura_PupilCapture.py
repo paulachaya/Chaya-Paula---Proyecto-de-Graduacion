@@ -67,6 +67,7 @@ subscriber.subscribe('gaze.')  # Se suscribe a todos los mensajes de mirada ('ga
 #                como tupla de ceros.
 def Lectura_PupilCapture(tiempo,etapa,rectas,queue,):
     print('Inicianzo lectura...')
+    time.sleep(0.1)
     lectura = [] #Lista para guardar los datos 
     tiempo_inicio = time.time() #Defino t=0
     total=0
@@ -99,11 +100,11 @@ def Lectura_PupilCapture(tiempo,etapa,rectas,queue,):
             #print(f"Coordenadas (x): ({x}, {y})\n")
 
         else:
-            print("Advertencia: Coordenadas fuera de los límites normales (0, 1)\n")
+            #print("Advertencia: Coordenadas fuera de los límites normales (0, 1)\n")
             total += 1 
         time.sleep(0.01)
-    print('Cantidad de datos recolectados:',len(lectura))
-    print('Cantidad total de datos:',total)
+    #print('Cantidad de datos recolectados:',len(lectura))
+    #print('Cantidad total de datos:',total)
     lectura = [np.mean([coord[0] for coord in lectura]), np.mean([coord[1] for coord in lectura])]
     print(lectura)
     print('Lectura de datos finalizada.')
