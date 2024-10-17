@@ -1,74 +1,94 @@
 import cv2
 import numpy as np
 
-# Carga los clasificadores Haar para detección de caras y ojos
-face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
+# Variables globales para almacenar la selección de ROI
+roi_selected = False
+roi = None
+start_point = None
+end_point = None
+drawing = False
 
-# Inicia la captura de video desde la primera cámara (índice 0)
+# Función para manejar los eventos del mouse
+def select_roi(event, x, y, flags, param):
+    global roi_selected, roi, start_point, end_point, drawing
+    
+    if event == cv2.EVENT_LBUTTONDOWN:
+        start_point = (x, y)
+        drawing = True
+    
+    elif event == cv2.EVENT_MOUSEMOVE:
+        if drawing:
+            end_point = (x, y)
+    
+    elif event == cv2.EVENT_LBUTTONUP:
+        end_point = (x, y)
+        drawing = False
+        roi_selected = True
+
+# Inicia la captura de video desde la cámara infrarroja
 cap = cv2.VideoCapture(0)
 
+# Verifica si la cámara se abrió correctamente
 if not cap.isOpened():
     print("Error: No se pudo acceder a la cámara.")
 else:
-     # Establece el tamaño de la imagen (por ejemplo, 640x480 píxeles)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1366)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 768)
+    cv2.namedWindow('Cámara')
+    cv2.setMouseCallback('Cámara', select_roi)
+
     while True:
+        # Captura frame por frame
         ret, frame = cap.read()
 
         if ret:
-            # Convierte a escala de grises para mejorar la detección
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            # Si el ROI ha sido seleccionado, ajusta la región de interés
+            if roi_selected and start_point and end_point:
+                # Extrae la región seleccionada como ROI
+                x1, y1 = start_point
+                x2, y2 = end_point
+                roi = frame[y1:y2, x1:x2]
 
-            # Detecta la cara en el frame
-            faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+                if roi.size > 0:
+                    # Convierte el ROI a escala de grises
+                    gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
 
-            # Procesa cada cara detectada
-            for (x, y, w, h) in faces:
-                # Dibuja un rectángulo alrededor de la cara en la imagen en escala de grises
-                cv2.rectangle(gray, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                    # Aplica un filtro bilateral para suavizar la imagen y mantener los bordes nítidos
+                    smoothed_roi = cv2.bilateralFilter(gray_roi, 9, 75, 75)
 
-                 # Define la región de interés (ROI) para los ojos dentro de la cara detectada
-                roi_gray = gray[y:y + h, x:x + w]
-                roi_color = frame[y:y + h, x:x + w]
+                    # Aplica la detección de bordes para resaltar áreas de alto contraste
+                    edges = cv2.Canny(smoothed_roi, 50, 150)
 
-                # Detecta los ojos dentro de la ROI
-                eyes = eye_cascade.detectMultiScale(roi_gray, 1.1, 10)
+                    # Usa la detección de círculos de Hough para encontrar la pupila y el reflejo
+                    circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, dp=1.2, minDist=50,
+                                               param1=100, param2=30, minRadius=10, maxRadius=60)
 
-                for (ex, ey, ew, eh) in eyes:
-                    # Dibuja un rectángulo alrededor del ojo en la imagen en escala de grises
-                    cv2.rectangle(roi_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
+                    detected_pupil_position = None  # Inicializa la variable
 
-                    # Recorta la región del ojo
-                    eye_roi = roi_gray[ey:ey + eh, ex:ex + ew]
+                    # Si se detectan círculos
+                    if circles is not None:
+                        circles = np.round(circles[0, :]).astype("int")
 
-                    # Aplica un desenfoque gaussiano para suavizar la imagen del ojo
-                    blurred_eye = cv2.GaussianBlur(eye_roi, (7, 7), 0)
+                        # Dibuja los círculos detectados y guarda la posición de la pupila
+                        for (x, y, r) in circles:
+                            detected_pupil_position = (x, y)  # Guarda la posición del centro del círculo
+                            # Dibuja el contorno del círculo
+                            cv2.circle(roi, (x, y), r, (0, 255, 0), 2)
+                            # Dibuja el centro del círculo
+                            cv2.circle(roi, (x, y), 2, (0, 0, 255), 3)
 
-                    # Usa un umbral adaptativo para detectar la pupila
-                    _, threshold_eye = cv2.threshold(blurred_eye, 50, 255, cv2.THRESH_BINARY_INV)
+                    # Imprime la posición de la pupila detectada
+                    if detected_pupil_position is not None:
+                        print(f"Posición de la pupila: {detected_pupil_position}")
 
-                    # Encuentra los contornos
-                    contours, _ = cv2.findContours(threshold_eye, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                    # Muestra la imagen del ROI sin deformación y con bordes detectados
+                    cv2.imshow('Detección de Pupila en ROI', roi)
 
-                    # Itera sobre los contornos encontrados
-                    for contour in contours:
-                        # Filtra contornos pequeños que no sean relevantes
-                        if cv2.contourArea(contour) > 30:
-                            # Encuentra el centro y el radio del círculo más pequeño que contiene la pupila
-                            (x_center, y_center), radius = cv2.minEnclosingCircle(contour)
+            # Muestra el frame original y permite seleccionar ROI
+            if start_point and end_point and not roi_selected:
+                cv2.rectangle(frame, start_point, end_point, (0, 255, 0), 2)
 
-                            # Dibuja un círculo alrededor de la pupila detectada
-                            cv2.circle(roi_color, (int(ex + x_center), int(ey + y_center)), int(radius), (0, 0, 255), 2)
+            cv2.imshow('Cámara', frame)
 
-                            # Muestra la región binaria del ojo procesado
-                            cv2.imshow('Pupila Detectada', threshold_eye)
-
-            # Muestra el frame completo con la detección de cara y ojos
-            cv2.imshow('Detección de cara y ojos con Pupila', frame)
-
-            # Si se presiona 'q', rompe el bucle y cierra la ventana
+            # Si se presiona la tecla 'q', rompe el bucle y cierra la ventana
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
         else:
