@@ -9,8 +9,10 @@ import numpy as np
 import csv
 import pandas as pd
 import Funciones as F
-#import Lectura_PupilCapture as PC
 from sklearn.linear_model import LinearRegression
+from Eyetracker import eyetracker
+from Eyetracker import Lectura
+
 
 
 
@@ -49,7 +51,11 @@ class Calibracion(tk.Tk):
                                                 height=pant_2.height, 
                                                 bg='black')
             self.ventana2.canvas.pack() 
-      
+            # Arranco la función de eyetracker para
+            # mostrar la cámara.
+            threading.Thread(target=eyetracker).start()
+
+
 #   Funcion para iniciar calibracion en el segundo monitor     
     def ventana_calibracion(self):
         # Genero texto dentro del canvas 
@@ -62,9 +68,7 @@ class Calibracion(tk.Tk):
         # Determino los valores de las variables.
         self.puntos_cal = [[0,0],
                            [60,60],
-                           [40,-40],
-                           [-50,-50],
-                           [-40,40]] #puntos para calibrar
+                           [-40,-40]] #puntos para calibrar
         i = 0
         self.datos = [] # lista para guardar datos
         etapa = 'calibracion'
@@ -91,15 +95,6 @@ class Calibracion(tk.Tk):
         # La función se vuelve a llamar para cada punto de la lista
         print(f'Punto en pantalla:({x},{y}) [mm]')
 
-        ###########################################################
-        # Valor normalizado
-        #x_px = F.mm_a_px_X(x)
-        #y_px = F.mm_a_px_Y(y)
-        #x_norm = F.norm_x(x_px)
-        #y_norm = F.norm_y(y_px)
-        #print (f'Valor normalizado:({x_norm},{y_norm})\n')  
-        # #########################################################  
-
 #   Funcion para borrar cualquier cosa que 
 #   esté en pantalla
     def borrar(self):
@@ -115,6 +110,7 @@ class Calibracion(tk.Tk):
 #       en pantalla del ojo del participante.
     
     def calibracion(self,puntos,i,datos,etapa):
+        self.datos_cal = []
         # Por cada punto, voy a llamar a dos funciones en paralelo:
         #   1) funcion GRAFICAR: grafica el punto en pantalla.
         #   2) funcion LECTURA: obtiene los datos del eyetracker. 
@@ -125,7 +121,6 @@ class Calibracion(tk.Tk):
             # Grafico el punto.
             self.graficar(puntos[i])
 
-
             if etapa == 'validacion':
                 # Uso los valores obtenidos de la funcion 'Obtencion_rectas'
                 valores_rectas = [self.ord_x, self.pend_x, 
@@ -133,9 +128,8 @@ class Calibracion(tk.Tk):
             else:
                 valores_rectas = [0,0,0,0]
 
-
             # Hilo para realizar la lectura en paralelo con el gráfico
-            lectura_thread = threading.Thread(target=F.lectura_arduino,
+            lectura_thread = threading.Thread(target=Lectura,
                                               args=(3,etapa,valores_rectas,datos))
             lectura_thread.start()
 
@@ -193,15 +187,6 @@ class Calibracion(tk.Tk):
         x_eyetracker = np.array([coord[0] for coord in datos])
         y_eyetracker = np.array([coord[1] for coord in datos])
 
-        #######################################################
-        # puntos de calibracion en mm
-        #for j,(x,y) in enumerate(self.puntos_cal):
-        #    x = F.norm_x(F.mm_a_px_X(x))
-        #    y = F.norm_y(F.mm_a_px_Y(y))
-        #    self.puntos_cal[j] = x,y
-        #######################################################
-
-
         # Separo los valores de X e Y de los puntos
         # de calibración
         x = np.array([coord[0] for coord in self.puntos_cal])
@@ -212,8 +197,10 @@ class Calibracion(tk.Tk):
         calibracion_y = LinearRegression()
 
         # Ajustar el modelo a los datos
-        calibracion_x.fit(x.reshape(-1, 1), x_eyetracker)  # reshape para ajustar la dimensión
-        calibracion_y.fit(y.reshape(-1, 1), y_eyetracker)
+        #calibracion_x.fit(x.reshape(-1, 1), x_eyetracker)  # reshape para ajustar la dimensión
+        #calibracion_y.fit(y.reshape(-1, 1), y_eyetracker)
+        calibracion_x.fit(x_eyetracker.reshape(-1, 1), x)  # reshape para ajustar la dimensión
+        calibracion_y.fit(y_eyetracker.reshape(-1, 1), y)
 
         # Coeficientes obtenidos (pendiente y término independiente)
         print('\nCalibracion en X')
@@ -234,16 +221,6 @@ class Calibracion(tk.Tk):
     # un determinado punto mostrado en pantalla y 
     # la posicion de la mirada del sujeto
     def Calculo_de_errores(self, datos):
-        
-        ###########################################################
-        # Normalizar los puntos (están en mm)
-        #for j, (x,y) in enumerate(self.puntos_validacion):
-        #    x = F.norm_x(F.mm_a_px_X(x))
-        #    y = F.norm_y(F.mm_a_px_Y(y))
-        #    self.puntos_validacion[j] = x,y
-        ###########################################################
-
-
         # Los puntos y los datos tienen el siguiente formato
         # puntos/datos = [[x1,y1],[x2,y2],[x3,y3],[x4,y4]]
 
@@ -266,7 +243,7 @@ class Calibracion(tk.Tk):
             Error_promedio_x = np.mean(error_x)
             Error_promedio_y = np.mean(error_y)
 
-            print(f'\nError Promedio (valores normalizados):\nEje X: {Error_promedio_x}\nEje Y: {Error_promedio_y}')
+            print(f'\nError Promedio (valores en mm):\nEje X: {Error_promedio_x}\nEje Y: {Error_promedio_y}')
             
             #Errores en grados
             Error_x_grados = F.mm_a_grados(Error_promedio_x)
@@ -299,5 +276,6 @@ class Calibracion(tk.Tk):
 def main():
     app = Calibracion()
     app.mainloop()
+    
 if __name__ == '__main__':
     main()

@@ -5,28 +5,20 @@ from matplotlib.patches import Circle
 import winsound
 import time
 import random as rd
-import serial
 import keyboard
 
 #   Funciones de conversion para las pruebas de deteccion
 def px_a_mm_X(valor_en_px):
-    return (0.3 * valor_en_px) - 195
+    return (0.2941 * valor_en_px) - 200
 
 def px_a_mm_Y(valor_en_px):
-    return 105 + (0.3 * valor_en_px)
+    return 110 - (0.2865 * valor_en_px)
 
 def mm_a_px_X(valor_en_mm):
-    return int((valor_en_mm + 195) / 0.3)
+    return int((valor_en_mm + 200) / 0.2941)
 
 def mm_a_px_Y(valor_en_mm):
-    return int((valor_en_mm - 105) / (-0.3))
-
-#def norm_x(valor_en_px):
-#    return 0.0008*valor_en_px
-
-#def norm_y(valor_en_px):
-#    return 0.0014*valor_en_px
-
+    return int((valor_en_mm - 110) / (-0.2865))
 
 def grados_a_mm(valor):
     return valor*5.25
@@ -134,39 +126,16 @@ def patron_nuevo(resultado_paciente):
     vectores = [list(vector) for vector in vectores]
     return vectores
 
-
-#######################################################
-# Funciones para presionar la barra espaciadora
-def on_space_press(event):
-    global space_pressed
-    space_pressed = True
-def space_press(resultado):                  
-    global space_pressed
-    space_pressed = False
-    tiempo_inicio = time.time()
-    # Esperar un segundo
-    while (time.time() - tiempo_inicio) <= 2:        
-        if space_pressed:
-            result=1
-            time.sleep(0.5)
-            break
-    else:
-        result = 0
-    resultado = result
-#######################################################
-
-
+#######################################################################################
 # Funcion lectura de arduino
 def lectura_arduino(tiempo,etapa,rectas,queue):
-    ser = serial.Serial('COM6', 9600)
     #print('Iniciando lectura de datos...')
     lectura = []
     # Inicia el tiempo de lectura del arduino (4 segundos)
     tiempo_inicio = time.time()
     while (time.time() - tiempo_inicio) <= tiempo: 
-        line = ser.readline().decode('utf-8',errors='ignore').strip()
-        #v1,v2 = rd.randint(-450,450),rd.randint(-450,450)
-        #line = f'{v1},{v2}' 
+        v1,v2 = rd.randint(-450,450),rd.randint(-450,450)
+        line = f'{v1},{v2}' 
         if line:
             valores = line.split(',')
             # Verifico que la línea venga con dos valores (x,y) 
@@ -190,8 +159,9 @@ def lectura_arduino(tiempo,etapa,rectas,queue):
     print(f'Eyetracker:{lectura}\n')
     #print('Lectura de datos finalizada.')
     queue.append(lectura)
+####################################################################################################
 
-
+#Funcion de teclado para prueba de deteccion subjetiva
 def teclado(i, cant_total,resultado):
     tiempo = time.time()
     print('arranco')
