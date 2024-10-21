@@ -32,20 +32,7 @@ def valor_eyetracker_a_mm_X(ord_x, pend_x, valor):
 def valor_eyetracker_a_mm_Y(ord_y, pend_y, valor):
     return ord_y + (valor * pend_y)
 
-# Funcion de analisis prueba objetiva
-def analisis(estimulo_x,estimulo_y,valor_x,valor_y):
-    if ((abs(valor_x - estimulo_x) < 30)
-        and (abs(valor_y - estimulo_y) < 30)): 
-        return 1  
-    else:
-        return 0
 
-# Funcion de validez prueba objetiva
-def validez_de_prueba(valor_x,valor_y):
-    if (abs(valor_x)<30) and (abs(valor_y)<30):
-        return 1
-    else:
-        return 0
 
 # Funcion para generar puntos para el patrón de estimulos
 def generar_puntos_circunferencia(radio, lim1, lim2, num_puntos, centro=(0, 0)):
@@ -97,7 +84,8 @@ def Patron_vectores(radios,lim1,lim2,num_puntos):
     for r in radios:
         x, y = generar_puntos_circunferencia(r, lim1, lim2,
                                             num_puntos, centro=(0, 0))
-        num_puntos = num_puntos + 2
+        num_puntos = num_puntos + 1
+        #num_puntos = num_puntos + 2
         for i in range(1,len(x)):
             vectores.append([grados_a_mm(x[i]), grados_a_mm(y[i])])
             vectores.append([grados_a_mm(-x[i]), grados_a_mm(-y[i])])
@@ -126,52 +114,3 @@ def patron_nuevo(resultado_paciente):
     vectores = [list(vector) for vector in vectores]
     return vectores
 
-#######################################################################################
-# Funcion lectura de arduino
-def lectura_arduino(tiempo,etapa,rectas,queue):
-    #print('Iniciando lectura de datos...')
-    lectura = []
-    # Inicia el tiempo de lectura del arduino (4 segundos)
-    tiempo_inicio = time.time()
-    while (time.time() - tiempo_inicio) <= tiempo: 
-        v1,v2 = rd.randint(-450,450),rd.randint(-450,450)
-        line = f'{v1},{v2}' 
-        if line:
-            valores = line.split(',')
-            # Verifico que la línea venga con dos valores (x,y) 
-            if len(valores)==2:
-                try:
-                    valores = [int(valor) for valor in valores]
-                    if etapa=='validacion':
-                        # En la etapa de validacion, se usan las rectas
-                        # calculadas anteriormente.
-                        #  rectas = [self.ord_x, self.pend_x, self.ord_y, self.pend_y]
-                        ord_x, pend_x, ord_y, pend_y = rectas
-                        lectura.append([valor_eyetracker_a_mm_X(ord_x, pend_x, valores[0]),
-                                        valor_eyetracker_a_mm_Y(ord_y, pend_y, valores[1])]) 
-                    else:
-                        if len(lectura) > 50:
-                            lectura.pop(0)
-                        lectura.append([valores[0],valores[1]])
-                except ValueError:
-                        print("Error al convertir valores:", valores)
-    lectura = [np.mean([coord[0] for coord in lectura]), np.mean([coord[1] for coord in lectura])]
-    print(f'Eyetracker:{lectura}\n')
-    #print('Lectura de datos finalizada.')
-    queue.append(lectura)
-####################################################################################################
-
-#Funcion de teclado para prueba de deteccion subjetiva
-def teclado(i, cant_total,resultado):
-    tiempo = time.time()
-    print('arranco')
-    while (time.time() - tiempo) <= 3:
-        try:
-            if keyboard.is_pressed('space'):
-                resultado = 1
-                print('tecla presionada')
-                time.sleep(0.5)
-                break
-        except:
-            break
-    print(f'{i}/{cant_total}:{resultado}\n')

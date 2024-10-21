@@ -20,7 +20,7 @@ y_data = []
 time_data = []
 
 # Frecuencia de muestreo (en Hz)
-sampling_frequency = 30  # 10 Hz = 10 muestras por segundo
+sampling_frequency = 50  # 10 Hz = 10 muestras por segundo
 sampling_interval = 1 / sampling_frequency  # Intervalo de muestreo en segundos
 
 # Función para manejar los eventos del mouse
