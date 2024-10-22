@@ -4,8 +4,6 @@ import matplotlib.ticker as ticker
 from matplotlib.patches import Circle
 import winsound
 import time
-import random as rd
-import keyboard
 
 #   Funciones de conversion para las pruebas de deteccion
 def px_a_mm_X(valor_en_px):
@@ -32,8 +30,6 @@ def valor_eyetracker_a_mm_X(ord_x, pend_x, valor):
 def valor_eyetracker_a_mm_Y(ord_y, pend_y, valor):
     return ord_y + (valor * pend_y)
 
-
-
 # Funcion para generar puntos para el patrón de estimulos
 def generar_puntos_circunferencia(radio, lim1, lim2, num_puntos, centro=(0, 0)):
     angulos = np.linspace(lim1, lim2, num_puntos, endpoint=False)  
@@ -50,7 +46,7 @@ def Grafica_resultado(Sujeto,Ojo,estimulo_no_detectado):
         else:
             ex, ey = generar_puntos_circunferencia(3,0,2*np.pi, 100, centro=(-15, 0))
             
-        plt.figure(figsize=(15,10))
+        plt.figure(figsize=(5,3))
         plt.hist2d(mm_a_grados(np.array([coord[0] for coord in estimulo_no_detectado])),
                    mm_a_grados(np.array([coord[1] for coord in estimulo_no_detectado])),
                    bins=[30, 10], cmap='Greys')

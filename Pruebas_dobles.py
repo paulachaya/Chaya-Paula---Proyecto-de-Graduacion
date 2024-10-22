@@ -163,16 +163,18 @@ class Pruebas(tk.Tk):
             # Si se encontró un vector, se elimina de la lista
             vectores.pop(indice)
             self.color = 'white'
-            print(f'El primer vector dentro del rango es {vector}')
+            #print(f'El primer vector dentro del rango es {vector}')
             self.dist_xmin, self.dist_xmax = self.dist_xmin - x, self.dist_xmax - x
             self.dist_ymin, self.dist_ymax = self.dist_ymin - y, self.dist_ymax - y
         else:
             # Si no se encontró un vector, se define uno
             # hacia el origen
             x,y = -self.ox,-self.oy
-            self.dist_xmin, self.dist_xmax = -200,200
-            self.dist_ymin, self.dist_ymax = -100,100
-            i = i-1
+            self.dist_xmin, self.dist_xmax = -180,180
+            self.dist_ymin, self.dist_ymax = -90,90
+            self.cantidad_total_vectores = self.cantidad_total_vectores + 1
+            #i = i-1
+
             # Como se trata de un vector que no pertence a la lista,
             # se cambia de color para avisar en la funcion de prueba
             # que no se debe guardar las respuestas asociadas a este 
@@ -235,11 +237,13 @@ class Pruebas(tk.Tk):
         self.largo,self.ancho,self.color = 30, 3, 'white'
             
         # Defino variables de la  funcion 'Iniciar'
+        k = 1
         i = 0
         self.ox,self.oy = 0,0 
         self.vect_no_percibidos = []
         self.respuesta = []
-        self.after(4000, lambda: self.Iniciar_prueba(Vectores,
+        self.after(4000, lambda: self.Iniciar_prueba(k,
+                                                     Vectores,
                                                      i,
                                                      self.vect_no_percibidos))
         
@@ -247,87 +251,120 @@ class Pruebas(tk.Tk):
 #   Función 'Iniciar Prueba': Muestra los puntos
 #   y cruces en pantalla y guarda los resultados
 #   (es decir, si el sujeto percibió o no los puntos)
-    def Iniciar_prueba(self,distancias,i,vect_no_percibidos):
+    def Iniciar_prueba(self,k,distancias,i,vect_no_percibidos):
         # Por cada Vector (x,y) , voy a llamar a dos funciones en paralelo:
         #   1) funcion GRAFICAR: grafica el punto en pantalla.
         #   2) funcion de respuesta:
         #       a) para tipo 'Eyetracker': obtiene los datos del EYETRACKER. 
         #       b) para tipo 'Teclado': Obtiene a informacion de la barra
         #          espaciadora.
-        if i < self.cantidad_total_vectores:
-            ox, oy = self.ox, self.oy
-            # Grafica la cruz en el origen de coordenadas
-            print(f'Cruz en:{self.ox},{self.oy}.')
-            self.graficar_cruz(self.largo,
-                               self.ancho)
-            
-            # Con la funcion Aleatorio
-            # elijo la distancia o vector (x,y)
-            vector_x, vector_y = self.Aleatorio(i,distancias)
-            dist_x,dist_y = vector_x + self.ox, vector_y + self.oy
-            print(f'Se grafica el vector a distancia {dist_x},{dist_y}')
-            # La cruz tarda 1 segundo en achicarse
-            # Luego de 1s, emito sonido para avisar
-            # que aparecerá el punto
-            self.after(1000, lambda: F.beep1())
+        if k<=2:
+            if i < self.cantidad_total_vectores:
+                ox, oy = self.ox, self.oy
+                # Grafica la cruz en el origen de coordenadas
+                #print(f'Cruz en:{self.ox},{self.oy}.')
+                self.graficar_cruz(self.largo,
+                                self.ancho)
+                
+                # Con la funcion Aleatorio
+                # elijo la distancia o vector (x,y)
+                vector_x, vector_y = self.Aleatorio(i,distancias)
+                dist_x,dist_y = vector_x + self.ox, vector_y + self.oy
+                #print(f'Se grafica el vector a distancia {dist_x},{dist_y}')
+                # La cruz tarda 1 segundo en achicarse
+                # Luego de 1s, emito sonido para avisar
+                # que aparecerá el punto
+                self.after(1000, lambda: F.beep1())
 
-            # Luego del sonido, grafico el punto en pantalla
-            self.after(1300, lambda: self.graficar((dist_x,dist_y),'Prueba'))
+                # Luego del sonido, grafico el punto en pantalla
+                self.after(1300, lambda: self.graficar((dist_x,dist_y),'Prueba'))
 
-            if self.tipo=='Teclado':
-                self.resultado = 0
-                teclado = threading.Thread(target=self.teclado,
-                                           args=(i,))
-                teclado.start()
+                if self.tipo=='Teclado':
+                    self.resultado = 0
+                    teclado = threading.Thread(target=self.teclado,
+                                            args=(i,))
+                    teclado.start()
 
-                # El punto se borra a los 200 ms
-                self.after(1500, lambda: self.borrar())
+                    # El punto se borra a los 200 ms
+                    self.after(1500, lambda: self.borrar())
 
-                # Luego de 2 segundos, se determina
-                # si se presionó la barra en la prueba
-                self.after(2500, lambda: 
-                        self.analisis_respuesta_teclado(vector_x,
-                                                        vector_y))
-            if self.tipo == 'Eyetracker':
-                self.datos = []
-                self.resultado = 0
-                valores_rectas = [ord_x,
-                                  pend_x, 
-                                  ord_y, 
-                                  pend_y]
-                # Hilo para realizar la lectura en paralelo con el gráfico
-                lectura_thread = threading.Thread(target=Lectura,
-                                                  args=(2,
-                                                        self.tipo,
-                                                        valores_rectas,
-                                                        self.datos))
-                lectura_thread.start()
-                # El punto se borra a los 200 ms
-                self.after(1500, lambda: self.borrar())
+                    # Luego de 2 segundos, se determina
+                    # si se presionó la barra en la prueba
+                    self.after(2500, lambda: 
+                            self.analisis_respuesta_teclado(vector_x,
+                                                            vector_y))
+                if self.tipo == 'Eyetracker':
+                    self.datos = []
+                    self.resultado = 0
+                    valores_rectas = [ord_x,
+                                    pend_x, 
+                                    ord_y, 
+                                    pend_y]
+                    # Hilo para realizar la lectura en paralelo con el gráfico
+                    lectura_thread = threading.Thread(target=Lectura,
+                                                    args=(2,
+                                                            self.tipo,
+                                                            valores_rectas,
+                                                            self.datos))
+                    lectura_thread.start()
+                    # El punto se borra a los 200 ms
+                    self.after(1500, lambda: self.borrar())
 
-                # Luego de 2 segundos, se determina
-                # si se presionó la barra en la prueba
-                self.after(2500, lambda: self.validez_y_respuesta(i,
-                                                                  dist_x,
-                                                                  dist_y,
-                                                                  ox,
-                                                                  oy,))  
-                     
-            # Terminada la lectura, el nuevo origen será 
-            # la coordenada del vector (x,y)
-            # Se llama a la funcion nuevamente
-            self.after(3500, lambda: self.Iniciar_prueba(distancias,
-                                                         i+1,
-                                                         vect_no_percibidos))  
+                    # Luego de 2 segundos, se determina
+                    # si se presionó la barra en la prueba
+                    
+                    self.after(2500, lambda: self.validez_y_respuesta(i,
+                                                                      dist_x,
+                                                                      dist_y,
+                                                                      ox,
+                                                                      oy,))  
+                        
+                # Terminada la lectura, el nuevo origen será 
+                # la coordenada del vector (x,y)
+                # Se llama a la funcion nuevamente
+                self.after(3500, lambda: self.Iniciar_prueba(k,
+                                                             distancias,
+                                                             i+1,
+                                                             vect_no_percibidos))  
 
-            self.ox, self.oy = dist_x, dist_y
+                self.ox, self.oy = dist_x, dist_y
+            else:
+                k = k + 1
+                print(f'Ronda 2')
+
+                self.after(2000, lambda: self.borrar())
+                Vectores = F.patron_nuevo(resultado_paciente=self.respuesta)
+                # Se mezcla la lista para que los vectores
+                # se presenten de forma aleatoria
+                np.random.shuffle(Vectores)
+
+                # Determino la cantidad total de Vectores
+                self.cantidad_total_vectores = len(Vectores)
+                print(f'Cantidad de vectores no detectados: {self.cantidad_total_vectores}')
+                # Determino los límites de la pantalla,
+                # es decir, las distancias maximas y minimas 
+                # que puedo presentar en pantalla
+                self.dist_xmin, self.dist_xmax = -180,180
+                self.dist_ymin, self.dist_ymax = -90,90
+                    
+                # Defino las variables para las gráficas
+                self.largo,self.ancho,self.color = 30, 3, 'white'
+                    
+                # Defino variables de la  funcion 'Iniciar'
+                i = 0
+                self.ox,self.oy = 0,0 
+                self.after(4000, lambda: self.Iniciar_prueba(k,
+                                                             Vectores,
+                                                             i,
+                                                             self.vect_no_percibidos))
+        
         else:
             print('Fin')
             self.texto_canvas('Fin')
             self.Sujeto = input('Ingrese Nombre de participante')
             self.Ojo = input("Ojo evaluado en esta prueba 'Derecho/Izquierdo': ")
             F.Grafica_resultado(self.Sujeto, self.Ojo,self.vect_no_percibidos)
-
+    
     def teclado(self,i):
         tiempo = time.time()
         print('arranco')
@@ -344,7 +381,7 @@ class Pruebas(tk.Tk):
 
     def analisis_respuesta_teclado(self,vector_x,vector_y):
         if self.color == 'white':
-                #self.respuesta.append([vector_x,vector_y,self.resultado])              
+                self.respuesta.append([vector_x,vector_y,self.resultado])              
                 if self.resultado == 0: # no detectó el estímulo
                     #self.vect_no_detectado.append([dist_x-self.ox, dist_y-self.oy])
                     print(f'Vector {vector_x,vector_y} no percibido.\n')
@@ -355,24 +392,30 @@ class Pruebas(tk.Tk):
         
         x = [coord[0] for coord in self.datos[0]]
         y = [coord[1] for coord in self.datos[0]]
+        if self.color == 'white':
+            if (abs(np.mean(x[20:30])-ox)<40) and (abs(np.mean(y[20:30])-oy)<40):
+                # Analizo la respuesta
+                if (((abs(np.mean(x[-20:]) - (dist_x))) < 40)
+                    and ((abs(np.mean(y[-20:]) - (dist_y))) < 40)):
+                    self.resultado = 1
+                    print(f'Vector {dist_x-ox,dist_y-oy} percibido.')
+                else:
+                    self.resultado = 0
+                    self.vect_no_percibidos.append([dist_x-ox,dist_y-oy])
+                    print(f'Vector {dist_x-ox,dist_y-oy} NO percibido.')
+                    
+            else:
+                print('No Válido')
+                self.vect_no_percibidos.append([dist_x-ox,dist_y-oy])
+                self.resultado=0
+            self.respuesta.append([dist_x-ox,dist_y-oy,self.resultado])
+            print(f'{i+1}/{self.cantidad_total_vectores}:{self.resultado}\n') 
+        else:
+            print('Punto de acomodación.')
 
         # Grafico donde vio el sujeto en la pantalla
         self.graficar((np.mean(x[-10:]),np.mean(y[-10:])),"Operario")
-
-        if (abs(np.mean(x[20:30])-ox)<40) and (abs(np.mean(y[20:30])-oy)<40):
-            # Analizo la respuesta
-            if (((abs(np.mean(x[-20:]) - (dist_x))) < 40)
-                and ((abs(np.mean(y[-20:]) - (dist_y))) < 40)):
-                self.resultado = 1
-                print(f'Vector {dist_x-ox,dist_y-oy} percibido.')
-            else:
-                self.resultado = 0
-                self.vect_no_percibidos.append([dist_x-ox,dist_y-oy])
-                print(f'Vector {dist_x-ox,dist_y-oy} NO percibido.')
-        else:
-            print('No Válido')
-            self.vect_no_percibidos.append([dist_x-ox,dist_y-oy])
-        print(f'{i+1}/{self.cantidad_total_vectores}:{self.resultado}\n')
+        
         
     def Guardar(self):
         #Lista de Vectores original
