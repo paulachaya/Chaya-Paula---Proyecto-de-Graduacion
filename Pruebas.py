@@ -155,11 +155,11 @@ class Pruebas(tk.Tk):
 #   y se determina la cantidad de vueltas por prueba
     def Pruebas(self,tipo):
         self.tipo = tipo
-        if tipo == 'Eyetracker':
+        if self.tipo == 'Eyetracker':
             # Arranco la función de eyetracker para
             # mostrar la cámara.
             threading.Thread(target=eyetracker).start()
-
+       
         self.texto_canvas('Inicio de prueba')
         print(f'Tipo de prueba: {tipo}')
         print(f'Ronda 1')
@@ -209,7 +209,7 @@ class Pruebas(tk.Tk):
         #       b) para tipo 'Teclado': Obtiene a informacion de la barra
         #          espaciadora.
         if i < self.cantidad_total_vectores:
-            
+            ox, oy = self.ox, self.oy
             # Grafica la cruz en el origen de coordenadas
             print(f'Cruz en:{self.ox},{self.oy}.')
             self.graficar_cruz(self.largo,
@@ -232,7 +232,7 @@ class Pruebas(tk.Tk):
             if self.tipo=='Teclado':
                 self.resultado = 0
                 teclado = threading.Thread(target=self.teclado,
-                                        args=(i,))
+                                           args=(i,))
                 teclado.start()
 
                 # El punto se borra a los 200 ms
@@ -252,18 +252,21 @@ class Pruebas(tk.Tk):
                                   pend_y]
                 # Hilo para realizar la lectura en paralelo con el gráfico
                 lectura_thread = threading.Thread(target=Lectura,
-                                                args=(2,self.tipo,valores_rectas,self.datos))
+                                                  args=(2,
+                                                        self.tipo,
+                                                        valores_rectas,
+                                                        self.datos))
                 lectura_thread.start()
                 # El punto se borra a los 200 ms
                 self.after(1500, lambda: self.borrar())
 
-                # Luego de 2 segundos, se determina
-                # si se presionó la barra en la prueba
-                self.after(3000, lambda: 
-                           self.validez_y_respuesta(i,
-                                                    self.datos,
-                                                    vector_x,
-                                                    vector_y))  
+            # Luego de 2 segundos, se determina
+            # si se presionó la barra en la prueba
+            self.after(2500, lambda: self.validez_y_respuesta(i,
+                                                              dist_x,
+                                                              dist_y,
+                                                              ox,
+                                                              oy,))  
                  
             
             # Terminada la lectura, el nuevo origen será 
@@ -304,24 +307,27 @@ class Pruebas(tk.Tk):
                     self.vect_no_percibidos.append([vector_x,vector_y])
 
     # Funcion de validez prueba objetiva
-    def validez_y_respuesta(self,i,datos,vector_x,vector_y):
-        x = [coord[0] for coord in datos]
-        y = [coord[1] for coord in datos]
-        print(np.mean(x[20:40]))
-        print(np.mean(y[20:40]))
-        print(np.mean(x[-20:]))
-        print(np.mean(y[-20:]))
-        if abs(np.mean(x[20:40])<20) and (abs(np.mean(y[20:40])<20)):
+    def validez_y_respuesta(self,i,dist_x,dist_y,ox,oy):
+        
+        x = [coord[0] for coord in self.datos[0]]
+        y = [coord[1] for coord in self.datos[0]]
+
+        # Grafico donde vio el sujeto en la pantalla
+        self.graficar(punto=(np.mean(x[-10:]),np.mean(y[-10:])))
+
+        if (abs(np.mean(x[20:30])-ox)<40) and (abs(np.mean(y[20:30])-oy)<40):
             # Analizo la respuesta
-            if (((abs(np.mean(x[-20:]) - vector_x)) < 20)
-                and ((abs(np.mean(y[-20:]) - vector_y)) < 20)):
+            if (((abs(np.mean(x[-20:]) - (dist_x))) < 40)
+                and ((abs(np.mean(y[-20:]) - (dist_y))) < 40)):
                 self.resultado = 1
+                print(f'Vector {dist_x-ox,dist_y-oy} percibido.')
             else:
                 self.resultado = 0
-                self.vect_no_percibidos.append([vector_x,vector_y])
+                self.vect_no_percibidos.append([dist_x-ox,dist_y-oy])
+                print(f'Vector {dist_x-ox,dist_y-oy} NO percibido.')
         else:
             print('No Válido')
-            self.vect_no_percibidos.append([vector_x,vector_y])
+            self.vect_no_percibidos.append([dist_x-ox,dist_y-oy])
         print(f'{i+1}/{self.cantidad_total_vectores}:{self.resultado}\n')
         
     def Guardar(self):

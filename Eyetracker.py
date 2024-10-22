@@ -6,10 +6,10 @@ import Funciones as F
 
 # Variables globales para almacenar la posición de la pupila
 detected_pupil_position = None
-ROI_FRAME = [126, 123, 501, 362]
+ROI_FRAME=[146,166,447,344]
 
 # Frecuencia de muestreo en Hz (muestras por segundo)
-sampling_frequency = 50  # Puedes ajustar esta frecuencia a tu necesidad (en Hz)
+sampling_frequency = 60  # Puedes ajustar esta frecuencia a tu necesidad (en Hz)
 sampling_interval = 1 / sampling_frequency  # Intervalo de tiempo entre muestras
 
 # Función del eyetracker
@@ -82,7 +82,7 @@ def Lectura(tiempo, etapa, rectas, queue):
     tiempo_inicio = time.perf_counter()  # Usa perf_counter para más precisión
     datos = []
     intervalo_muestreo = 1 / sampling_frequency  # Intervalo de muestreo en segundos
-    time.sleep(0.01)
+    time.sleep(0.1)
 
     while (time.perf_counter() - tiempo_inicio) <= tiempo:
         start_time = time.perf_counter()  # Marca el tiempo de inicio del ciclo
@@ -91,6 +91,8 @@ def Lectura(tiempo, etapa, rectas, queue):
                 x, y = detected_pupil_position[0], detected_pupil_position[1]
 
                 if etapa == 'validacion':
+                    if len(datos) > 50:  # sólo trabajo con los últimos 50 datos
+                        datos.pop(0)
                     ord_x, pend_x, ord_y, pend_y = rectas
                     datos.append([F.valor_eyetracker_a_mm_X(ord_x, pend_x, x),
                                   F.valor_eyetracker_a_mm_Y(ord_y, pend_y, y)])
@@ -100,7 +102,7 @@ def Lectura(tiempo, etapa, rectas, queue):
                         datos.pop(0)
                     datos.append([x, y])
 
-                elif etapa == 'Eyetracker':
+                elif etapa == 'Eyetracker': #Prueba de deteccion
                     ord_x, pend_x, ord_y, pend_y = rectas
                     datos.append([F.valor_eyetracker_a_mm_X(ord_x, pend_x, x),
                                   F.valor_eyetracker_a_mm_Y(ord_y, pend_y, y)])
@@ -114,10 +116,17 @@ def Lectura(tiempo, etapa, rectas, queue):
             time.sleep(intervalo_muestreo - elapsed_time)
 
     if etapa == 'calibracion' or etapa == 'validacion':
-        print(f'Eyetracker: {len(datos)} datos\n')
         datos = [np.mean([coord[0] for coord in datos]), np.mean([coord[1] for coord in datos])]
+        print(f'Eyetracker: {datos}\n')
 
+    #if etapa == 'Eyetracker':
+        
+    #    validez_y_respuesta(datos)
+        #print(x)
+        #print(datos)
     queue.append(datos)
 
+
+        
 
 #eyetracker()

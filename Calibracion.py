@@ -15,7 +15,6 @@ from Eyetracker import Lectura
 
 
 
-
 class Calibracion(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -243,13 +242,23 @@ class Calibracion(tk.Tk):
             Error_promedio_x = np.mean(error_x)
             Error_promedio_y = np.mean(error_y)
 
-            print(f'\nError Promedio (valores en mm):\nEje X: {Error_promedio_x}\nEje Y: {Error_promedio_y}')
+            # Desviaciones
+            Desv_x = np.std(error_x)
+            Desv_y = np.std(error_y)
+
+            print(f'\nError Promedio (mm):\nEje X: {Error_promedio_x}[mm]\nEje Y: {Error_promedio_y}[mm]')
+            print(f'Desviación en x (mm):{Desv_x}[mm]\nDesviación en y: {Desv_y}[mm]')
             
             #Errores en grados
             Error_x_grados = F.mm_a_grados(Error_promedio_x)
             Error_y_grados = F.mm_a_grados(Error_promedio_y)
 
-            print(f'\nError Promedio (grados):\nEje X: {Error_x_grados}\nEje Y: {Error_y_grados}')
+            # Desviaciones en grados
+            Desv_x_grados = F.mm_a_grados(Desv_x)
+            Desv_y_grados = F.mm_a_grados(Desv_y)
+
+            print(f'\nError Promedio (grados):\nEje X: {Error_x_grados}°\nEje Y: {Error_y_grados}°')
+            print(f'Desviación en x (grados):{Desv_x_grados}°\nDesviación en y (grados): {Desv_y_grados}°')
 
     
 #   Funcion guardar_calibracion:
