@@ -6,10 +6,9 @@ import Funciones as F
 
 # Variables globales para almacenar la posición de la pupila
 detected_pupil_position = None
-ROI_FRAME=[146,166,447,344]
-
+ROI_FRAME=[176,193,425,315]
 # Frecuencia de muestreo en Hz (muestras por segundo)
-sampling_frequency = 60  # Puedes ajustar esta frecuencia a tu necesidad (en Hz)
+sampling_frequency = 50  # Puedes ajustar esta frecuencia a tu necesidad (en Hz)
 sampling_interval = 1 / sampling_frequency  # Intervalo de tiempo entre muestras
 
 # Función del eyetracker
@@ -37,27 +36,28 @@ def eyetracker():
             roi = frame[y1:y2, x1:x2]
 
             if roi.size > 0:
-                # Convierte el ROI a escala de grises y realiza procesamiento
+                # Convierte el ROI a escala de grises (necesario para binarización)
                 gray_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-                smoothed_roi = cv2.bilateralFilter(gray_roi, 9, 75, 75)
-                edges = cv2.Canny(smoothed_roi, 50, 150)
+                
+                # Aplica un umbral binario para obtener una imagen en blanco y negro
+                _, binary_roi = cv2.threshold(gray_roi, 100, 255, cv2.THRESH_BINARY)
 
-                # Usa la detección de círculos de Hough para encontrar la pupila
-                circles = cv2.HoughCircles(edges, cv2.HOUGH_GRADIENT, dp=1.2, minDist=50,
-                                           param1=100, param2=30, minRadius=10, maxRadius=60)
+                # Usa la detección de círculos de Hough para encontrar la pupila en la imagen binaria
+                circles = cv2.HoughCircles(binary_roi, cv2.HOUGH_GRADIENT, dp=1.2, minDist=50,
+                                           param1=50, param2=15, minRadius=10, maxRadius=60)
 
                 if circles is not None:
                     circles = np.round(circles[0, :]).astype("int")
                     # Guarda la posición del centro del primer círculo detectado
-                    detected_pupil_position = (2*circles[0][0], 2*circles[0][1])
+                    detected_pupil_position = (2 * circles[0][0], 2 * circles[0][1])
 
-                    # Dibuja el círculo detectado en el ROI
+                    # Dibuja el círculo detectado en el ROI binario
                     for (x, y, r) in circles:
                         cv2.circle(roi, (x, y), r, (0, 255, 0), 2)  # Dibuja el contorno del círculo
                         cv2.circle(roi, (x, y), 2, (0, 0, 255), 3)  # Dibuja el centro del círculo
 
-                # Muestra la imagen del ROI con el círculo detectado
-                cv2.imshow('Detección de Pupila en ROI', roi)
+                # Muestra la imagen del ROI binario con el círculo detectado
+                cv2.imshow('Detección de Pupila en ROI Binario', binary_roi)
 
             # Muestra el frame original
             cv2.imshow('Cámara', frame)
@@ -119,14 +119,8 @@ def Lectura(tiempo, etapa, rectas, queue):
         datos = [np.mean([coord[0] for coord in datos]), np.mean([coord[1] for coord in datos])]
         print(f'Eyetracker: {datos}\n')
 
-    #if etapa == 'Eyetracker':
-        
-    #    validez_y_respuesta(datos)
-        #print(x)
-        #print(datos)
     queue.append(datos)
 
+     
 
-        
-
-#eyetracker()
+eyetracker()
