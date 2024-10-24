@@ -6,9 +6,9 @@ import Funciones as F
 
 # Variables globales para almacenar la posición de la pupila
 detected_pupil_position = None
-ROI_FRAME=[176,193,425,315]
+ROI_FRAME=[175,198,415,330]
 # Frecuencia de muestreo en Hz (muestras por segundo)
-sampling_frequency = 50  # Puedes ajustar esta frecuencia a tu necesidad (en Hz)
+sampling_frequency = 60  # Puedes ajustar esta frecuencia a tu necesidad (en Hz)
 sampling_interval = 1 / sampling_frequency  # Intervalo de tiempo entre muestras
 
 # Función del eyetracker
@@ -123,4 +123,4 @@ def Lectura(tiempo, etapa, rectas, queue):
 
      
 
-eyetracker()
+#eyetracker()

@@ -13,6 +13,7 @@ from Eyetracker import Lectura
 
 #Cargo datos de calibracion
 calibracion = pd.read_csv('calibracion.csv',delimiter=';')
+print('Datos de Calibración:')
 print(calibracion.columns)
 ord_x, pend_x = float(calibracion['Ordenada X'][0]), float(calibracion['Pendiente X'][0])
 ord_y, pend_y = float(calibracion['Ordenada Y'][0]), float(calibracion['Pendiente Y'][0])
@@ -216,6 +217,7 @@ class Pruebas(tk.Tk):
        
         # Genero el patrón de vectores incial
         radios = np.arange(7, 21, 2)
+        #radios = np.arange(12,18,1.5)
         lim1, lim2 = -np.pi / 5, np.pi / 5
         num_puntos = 1
         #num_puntos = 0
@@ -262,7 +264,11 @@ class Pruebas(tk.Tk):
             if i < self.cantidad_total_vectores:
                 ox, oy = self.ox, self.oy
                 # Grafica la cruz en el origen de coordenadas
-                #print(f'Cruz en:{self.ox},{self.oy}.')
+
+                ######################################
+                print(f'Cruz en:{self.ox},{self.oy}.')
+                ######################################
+                
                 self.graficar_cruz(self.largo,
                                 self.ancho)
                 
@@ -270,11 +276,19 @@ class Pruebas(tk.Tk):
                 # elijo la distancia o vector (x,y)
                 vector_x, vector_y = self.Aleatorio(i,distancias)
                 dist_x,dist_y = vector_x + self.ox, vector_y + self.oy
-                #print(f'Se grafica el vector a distancia {dist_x},{dist_y}')
+
+                ############################################################
+                print(f'Se grafica el vector a distancia {dist_x},{dist_y}')
+                ############################################################
+
+
                 # La cruz tarda 1 segundo en achicarse
                 # Luego de 1s, emito sonido para avisar
                 # que aparecerá el punto
-                self.after(1000, lambda: F.beep1())
+                
+                
+                self.after(800, lambda: self.borrar())
+                self.after(1000,lambda: F.beep1())
 
                 # Luego del sonido, grafico el punto en pantalla
                 self.after(1300, lambda: self.graficar((dist_x,dist_y),'Prueba'))
@@ -297,9 +311,9 @@ class Pruebas(tk.Tk):
                     self.datos = []
                     self.resultado = 0
                     valores_rectas = [ord_x,
-                                    pend_x, 
-                                    ord_y, 
-                                    pend_y]
+                                      pend_x, 
+                                      ord_y, 
+                                      pend_y]
                     # Hilo para realizar la lectura en paralelo con el gráfico
                     lectura_thread = threading.Thread(target=Lectura,
                                                       args=(2,
@@ -329,9 +343,9 @@ class Pruebas(tk.Tk):
 
                 self.ox, self.oy = dist_x, dist_y
             else:
-                k = k + 1
+                k += 1
                 print(f'Ronda 2')
-
+                print(f'Tipo:{self.tipo}')
                 self.after(2000, lambda: self.borrar())
                 Vectores = F.patron_nuevo(resultado_paciente=self.respuesta)
                 # Se mezcla la lista para que los vectores
@@ -349,7 +363,7 @@ class Pruebas(tk.Tk):
                     
                 # Defino las variables para las gráficas
                 self.largo,self.ancho,self.color = 30, 3, 'white'
-                    
+                #self.tipo = self.tipo    
                 # Defino variables de la  funcion 'Iniciar'
                 i = 0
                 self.ox,self.oy = 0,0 
@@ -391,11 +405,28 @@ class Pruebas(tk.Tk):
     def validez_y_respuesta(self,i,dist_x,dist_y,ox,oy):
         x = [coord[0] for coord in self.datos[0]]
         y = [coord[1] for coord in self.datos[0]]
+        
+###################################################################
+####### Tiene una Fs = 60 Hz, po lo tanto debería recibir 120 datos
+####### de los cuales los primeros 60 son de la cruz de fijacion
+####### y los ultimos 60 del estímulo.
+
+        #print(f'Cantidad de datos en X:{len(x)}')
+        #print(f'Cantidad de datos en Y:{len(y)}')
+
+        #print(f'Valores X de fijación: {x[0:55]}')
+        #print(f'Valores Y de fijación: {y[0:55]}')
+
+        #print(f'Valores X estímulo: {x[-55:]}')
+        #print(f'Valores Y estímulo: {y[-55:]}')
+###################################################################
+
+
         if self.color == 'white':
-            if (abs(np.mean(x[:20])-ox)<50) and (abs(np.mean(y[:20])-oy)<50):
+            if (abs(np.mean(x[30:50])-ox)<40) and (abs(np.mean(y[30:50])-oy)<40):
                 # Analizo la respuesta
-                if (((abs(np.mean(x[-20:]) - (dist_x))) < 50)
-                    and ((abs(np.mean(y[-20:]) - (dist_y))) < 50)):
+                if (((abs(np.mean(x[-15:]) - (dist_x))) < 40)
+                    and ((abs(np.mean(y[-15:]) - (dist_y))) < 40)):
                     self.resultado = 1
                     print(f'Vector {dist_x-ox,dist_y-oy} percibido.')
                 else:
@@ -413,15 +444,17 @@ class Pruebas(tk.Tk):
             print('Punto de acomodación.')
 
         # Grafico donde vio el sujeto en la pantalla
-        self.graficar((np.mean(x[-20:]),np.mean(y[-20:])),"Operario")
+        self.graficar((np.mean(x[-15:]),np.mean(y[-15:])),"Operario")
         
         
     def Guardar(self):
         #Lista de Vectores original
         # Genero el patrón de vectores incial
         radios = np.arange(7, 21, 2)
+        #radios = np.arange(12,18,1.5)
         lim1, lim2 = -np.pi / 5, np.pi / 5
         num_puntos = 1
+        #num_puntos = 0
         Vectores = F.Patron_vectores(radios,lim1,lim2,num_puntos)
         # Armo un unico vector con las coordenadas xy:
         for i in range(len(self.vect_no_percibidos)):

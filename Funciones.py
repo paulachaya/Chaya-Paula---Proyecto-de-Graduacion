@@ -49,7 +49,7 @@ def Grafica_resultado(Sujeto,Ojo,estimulo_no_detectado):
         plt.figure(figsize=(5,3))
         plt.hist2d(mm_a_grados(np.array([coord[0] for coord in estimulo_no_detectado])),
                    mm_a_grados(np.array([coord[1] for coord in estimulo_no_detectado])),
-                   bins=[30, 10], cmap='Greys')
+                   bins=[15,15], cmap='Greys')
         plt.plot(ex,ey)
         plt.colorbar(label='Frecuencia')
         plt.xlim(-25,25);plt.ylim(-17,17)
@@ -65,7 +65,7 @@ def Grafica_resultado(Sujeto,Ojo,estimulo_no_detectado):
 
 # Funcion para generar sonido
 def beep1():
-    winsound.Beep(1000,300)
+    winsound.Beep(1000,100)
 def beep2():
         frequency = 2000  
         duration = 200  
@@ -98,7 +98,7 @@ def patron_nuevo(resultado_paciente):
             for j in range(len(resultado_paciente)):
                 diferencia = [abs([coord[0] for coord in resultado_paciente][j]-x),
                               abs([coord[1] for coord in resultado_paciente][j]-y)]
-                if (np.linalg.norm(diferencia))<grados_a_mm(3.5):
+                if (np.linalg.norm(diferencia))<grados_a_mm(3):
                     patron_nuevo.append([[coord[0] for coord in resultado_paciente][j],
                                                    [coord[1] for coord in resultado_paciente][j]])
         else:

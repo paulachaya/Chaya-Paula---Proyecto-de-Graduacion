@@ -66,8 +66,10 @@ class Calibracion(tk.Tk):
         # arranco la funcion de calibracion.
         # Determino los valores de las variables.
         self.puntos_cal = [[0,0],
-                           [60,60],
-                           [-40,-40]] #puntos para calibrar
+                           [120,70],
+                           [120,-70],
+                           [-120,-70],
+                           [-120,70]] #puntos para calibrar
         i = 0
         self.datos = [] # lista para guardar datos
         etapa = 'calibracion'
@@ -129,12 +131,12 @@ class Calibracion(tk.Tk):
 
             # Hilo para realizar la lectura en paralelo con el gráfico
             lectura_thread = threading.Thread(target=Lectura,
-                                              args=(3,etapa,valores_rectas,datos))
+                                              args=(2,etapa,valores_rectas,datos))
             lectura_thread.start()
 
             # Borro el punto y llamo a la siguiente iteración después de 6 segundos
-            self.after(4000, lambda: self.borrar())  
-            self.after(5000, lambda: 
+            self.after(3000, lambda: self.borrar())  
+            self.after(4000, lambda: 
                        self.calibracion(puntos, i + 1,datos,etapa))
 
         else:

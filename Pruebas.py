@@ -213,10 +213,10 @@ class Pruebas(tk.Tk):
         self.after(2000, lambda: self.borrar())
        
         # Genero el patrón de vectores incial
-        radios = np.arange(7, 22, 3)
-        lim1, lim2 = -np.pi / 4, np.pi / 4
+        radios = np.arange(7, 21, 2)
+        lim1, lim2 = -np.pi / 5, np.pi / 5
         #num_puntos = 3
-        num_puntos = 0
+        num_puntos = 1
         Vectores = F.Patron_vectores(radios,lim1,lim2,num_puntos)
         # Se mezcla la lista para que los vectores
         # se presenten de forma aleatoria
@@ -307,7 +307,7 @@ class Pruebas(tk.Tk):
 
                 # Luego de 2 segundos, se determina
                 # si se presionó la barra en la prueba
-                self.after(2500, lambda: self.validez_y_respuesta(i,
+                self.after(2700, lambda: self.validez_y_respuesta(i,
                                                                   dist_x,
                                                                   dist_y,
                                                                   ox,
@@ -316,7 +316,7 @@ class Pruebas(tk.Tk):
             # Terminada la lectura, el nuevo origen será 
             # la coordenada del vector (x,y)
             # Se llama a la funcion nuevamente
-            self.after(3500, lambda: self.Iniciar_prueba(distancias,
+            self.after(3000, lambda: self.Iniciar_prueba(distancias,
                                                          i+1,
                                                          vect_no_percibidos))  
 
@@ -357,12 +357,12 @@ class Pruebas(tk.Tk):
         y = [coord[1] for coord in self.datos[0]]
 
         # Grafico donde vio el sujeto en la pantalla
-        self.graficar((np.mean(x[-10:]),np.mean(y[-10:])),"Operario")
+        self.graficar((np.mean(x[-15:]),np.mean(y[-15:])),"Operario")
 
-        if (abs(np.mean(x[20:30])-ox)<40) and (abs(np.mean(y[20:30])-oy)<40):
+        if (abs(np.mean(x[30:50])-ox)<50) and (abs(np.mean(y[30:50])-oy)<50):
             # Analizo la respuesta
-            if (((abs(np.mean(x[-20:]) - (dist_x))) < 40)
-                and ((abs(np.mean(y[-20:]) - (dist_y))) < 40)):
+            if (((abs(np.mean(x[-15:]) - (dist_x))) < 50)
+                and ((abs(np.mean(y[-15:]) - (dist_y))) < 50)):
                 self.resultado = 1
                 print(f'Vector {dist_x-ox,dist_y-oy} percibido.')
             else:
@@ -377,10 +377,9 @@ class Pruebas(tk.Tk):
     def Guardar(self):
         #Lista de Vectores original
         # Genero el patrón de vectores incial
-        radios = np.arange(7, 22, 3)
-        lim1, lim2 = -np.pi / 4, np.pi / 4
-        #num_puntos = 3
-        num_puntos = 0
+        radios = np.arange(7, 21, 2)
+        lim1, lim2 = -np.pi / 5, np.pi / 5
+        num_puntos = 1
         Vectores = F.Patron_vectores(radios,lim1,lim2,num_puntos)
         # Armo un unico vector con las coordenadas xy:
         for i in range(len(self.vect_no_percibidos)):
