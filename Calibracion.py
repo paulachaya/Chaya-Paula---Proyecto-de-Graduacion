@@ -48,7 +48,7 @@ class Calibracion(tk.Tk):
             self.ventana2.canvas = tk.Canvas(self.ventana2,
                                                 width=pant_2.width, 
                                                 height=pant_2.height, 
-                                                bg='black')
+                                                bg='white')
             self.ventana2.canvas.pack() 
             # Arranco la función de eyetracker para
             # mostrar la cámara.
@@ -65,11 +65,10 @@ class Calibracion(tk.Tk):
         # Una vez presentado el texto, 
         # arranco la funcion de calibracion.
         # Determino los valores de las variables.
-        self.puntos_cal = [[0,0],
-                           [120,70],
-                           [120,-70],
-                           [-120,-70],
-                           [-120,70]] #puntos para calibrar
+        self.puntos_cal = [[-120,-60],[-40,-60],[40,-60],[120,-60],
+                           [-120,-20],[-40,-20],[40,-20],[120,-20],
+                           [-120,20],[-40,20],[40,20],[120,20],
+                           [-120,60],[-40,60],[40,60],[120,60]] #puntos para calibrar
         i = 0
         self.datos = [] # lista para guardar datos
         etapa = 'calibracion'
@@ -82,7 +81,7 @@ class Calibracion(tk.Tk):
         center_x = self.ventana2.canvas.winfo_screenwidth() /2
         center_y = self.ventana2.canvas.winfo_screenheight()/2
         self.ventana2.canvas.create_text(center_x, center_y, text=texto,
-                                         font=("Arial", 48), fill="white",
+                                         font=("Arial", 48), fill="black",
                                          anchor=tk.CENTER)
 
 #   Funcion para graficar puntos en pantalla.
@@ -92,7 +91,7 @@ class Calibracion(tk.Tk):
                                             F.mm_a_px_Y(y)-5,
                                             F.mm_a_px_X(x)+5,
                                             F.mm_a_px_Y(y)+5,
-                                            fill='white')
+                                            fill='black')
         # La función se vuelve a llamar para cada punto de la lista
         print(f'Punto en pantalla:({x},{y}) [mm]')
 
@@ -243,10 +242,13 @@ class Calibracion(tk.Tk):
             # Obtengo el error promedio en cada eje
             Error_promedio_x = np.mean(error_x)
             Error_promedio_y = np.mean(error_y)
+            
+            self.error_x = Error_promedio_x
+            self.error_y = Error_promedio_y
 
             # Desviaciones
-            Desv_x = np.std(error_x)
-            Desv_y = np.std(error_y)
+            Desv_x = np.std(error_x,ddof=1)
+            Desv_y = np.std(error_y,ddof=1)
 
             print(f'\nError Promedio (mm):\nEje X: {Error_promedio_x}[mm]\nEje Y: {Error_promedio_y}[mm]')
             print(f'Desviación en x (mm):{Desv_x}[mm]\nDesviación en y: {Desv_y}[mm]')
@@ -274,11 +276,15 @@ class Calibracion(tk.Tk):
             writer.writerow(['Ordenada X',
                              'Pendiente X',
                              'Ordenada Y', 
-                             'Pendiente Y'])
+                             'Pendiente Y',
+                             'Error X',
+                             'Error Y'])
             writer.writerow([self.ord_x,
                              self.pend_x,
                              self.ord_y,
-                             self.pend_y])
+                             self.pend_y,
+                             self.error_x,
+                             self.error_y])
         print("Calibración guardada en calibracion.csv")
         self.after(1000, lambda: self.destroy())
 

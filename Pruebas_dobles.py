@@ -18,6 +18,8 @@ print(calibracion.columns)
 ord_x, pend_x = float(calibracion['Ordenada X'][0]), float(calibracion['Pendiente X'][0])
 ord_y, pend_y = float(calibracion['Ordenada Y'][0]), float(calibracion['Pendiente Y'][0])
 print(ord_x,pend_x,ord_y,pend_y)
+error_x = float(calibracion['Error X'][0])
+error_y = float(calibracion['Error Y'][0])
 
 class Pruebas(tk.Tk):
     def __init__(self):
@@ -57,7 +59,7 @@ class Pruebas(tk.Tk):
             self.ventana2.canvas = tk.Canvas(self.ventana2,
                                                 width=self.pant_2.width, 
                                                 height=self.pant_2.height, 
-                                                bg='black')
+                                                bg='white')
             self.ventana2.canvas.pack() 
 
 #   Funcion de texto    
@@ -67,13 +69,13 @@ class Pruebas(tk.Tk):
         self.ventana2.canvas.create_text(center_x, center_y, 
                                          text=texto,
                                          font=("Arial", 48),
-                                         fill="white",
+                                         fill="black",
                                          anchor=tk.CENTER)
         if self.tipo == 'Eyetracker':
             self.vent1.canvas.create_text(center_x, center_y, 
                                           text=texto,
                                           font=("Arial", 48),
-                                          fill="white",
+                                          fill="black",
                                           anchor=tk.CENTER)
 
 #   Funcion para graficar puntos en pantalla.
@@ -103,13 +105,13 @@ class Pruebas(tk.Tk):
                                                       F.mm_a_px_Y(self.oy),
                                                       F.mm_a_px_X(self.ox) + largo,
                                                       F.mm_a_px_Y(self.oy),
-                                                      fill='white',
+                                                      fill='black',
                                                       width=ancho)
         self.line2 = self.ventana2.canvas.create_line(F.mm_a_px_X(self.ox),
                                                       F.mm_a_px_Y(self.oy) - largo,
                                                       F.mm_a_px_X(self.ox),
                                                       F.mm_a_px_Y(self.oy) + largo,
-                                                      fill='white',
+                                                      fill='black',
                                                       width=ancho)
         self.reducir_tamano(F.mm_a_px_X(self.ox),F.mm_a_px_Y(self.oy),largo)
         
@@ -119,13 +121,13 @@ class Pruebas(tk.Tk):
                                           F.mm_a_px_Y(self.oy),
                                           F.mm_a_px_X(self.ox) + largo,
                                           F.mm_a_px_Y(self.oy),
-                                          fill='white',
+                                          fill='black',
                                           width=ancho)
             self.vent1.canvas.create_line(F.mm_a_px_X(self.ox),
                                           F.mm_a_px_Y(self.oy) - largo,
                                           F.mm_a_px_X(self.ox),
                                           F.mm_a_px_Y(self.oy) + largo,
-                                          fill='white',
+                                          fill='black',
                                           width=ancho)
                                                      
     # Funcion para disminuir el tamaño
@@ -163,7 +165,7 @@ class Pruebas(tk.Tk):
         if vector is not None:
             # Si se encontró un vector, se elimina de la lista
             vectores.pop(indice)
-            self.color = 'white'
+            self.color = 'black'
             #print(f'El primer vector dentro del rango es {vector}')
             self.dist_xmin, self.dist_xmax = self.dist_xmin - x, self.dist_xmax - x
             self.dist_ymin, self.dist_ymax = self.dist_ymin - y, self.dist_ymax - y
@@ -206,7 +208,7 @@ class Pruebas(tk.Tk):
             self.vent1.canvas = tk.Canvas(self.vent1,
                                           width=self.pant_1.width, 
                                           height=self.pant_1.height, 
-                                          bg='black')
+                                          bg='white')
             self.vent1.canvas.pack() 
        
         self.texto_canvas('Inicio de prueba')
@@ -236,7 +238,7 @@ class Pruebas(tk.Tk):
         self.dist_xmax, self.dist_ymax = np.max(Vectores, axis=0)
             
         # Defino las variables para las gráficas
-        self.largo,self.ancho,self.color = 30, 3, 'white'
+        self.largo,self.ancho,self.color = 30, 3, 'black'
             
         # Defino variables de la  funcion 'Iniciar'
         k = 1
@@ -362,7 +364,7 @@ class Pruebas(tk.Tk):
                 self.dist_ymin, self.dist_ymax = -90,90
                     
                 # Defino las variables para las gráficas
-                self.largo,self.ancho,self.color = 30, 3, 'white'
+                self.largo,self.ancho,self.color = 30, 3, 'black'
                 #self.tipo = self.tipo    
                 # Defino variables de la  funcion 'Iniciar'
                 i = 0
@@ -405,24 +407,9 @@ class Pruebas(tk.Tk):
     def validez_y_respuesta(self,i,dist_x,dist_y,ox,oy):
         x = [coord[0] for coord in self.datos[0]]
         y = [coord[1] for coord in self.datos[0]]
-        
-###################################################################
-####### Tiene una Fs = 60 Hz, po lo tanto debería recibir 120 datos
-####### de los cuales los primeros 60 son de la cruz de fijacion
-####### y los ultimos 60 del estímulo.
-
-        #print(f'Cantidad de datos en X:{len(x)}')
-        #print(f'Cantidad de datos en Y:{len(y)}')
-
-        #print(f'Valores X de fijación: {x[0:55]}')
-        #print(f'Valores Y de fijación: {y[0:55]}')
-
-        #print(f'Valores X estímulo: {x[-55:]}')
-        #print(f'Valores Y estímulo: {y[-55:]}')
-###################################################################
 
 
-        if self.color == 'white':
+        if self.color == 'black':
             if (abs(np.mean(x[30:50])-ox)<40) and (abs(np.mean(y[30:50])-oy)<40):
                 # Analizo la respuesta
                 if (((abs(np.mean(x[-15:]) - (dist_x))) < 40)

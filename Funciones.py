@@ -39,7 +39,8 @@ def generar_puntos_circunferencia(radio, lim1, lim2, num_puntos, centro=(0, 0)):
 
 # Funcion para graficar el resultado a partir de la lista de valores
 # xy que corresponden a los estimulos no detectados durante la prueba
-def Grafica_resultado(Sujeto,Ojo,estimulo_no_detectado):        
+def Grafica_resultado(Sujeto,Ojo,estimulo_no_detectado):
+                
         # Genero el perímetro del escotoma fisiológico
         if Ojo == 'Derecho':
             ex, ey = generar_puntos_circunferencia(3,0,2*np.pi, 100, centro=(15, 0))
@@ -47,7 +48,7 @@ def Grafica_resultado(Sujeto,Ojo,estimulo_no_detectado):
             ex, ey = generar_puntos_circunferencia(3,0,2*np.pi, 100, centro=(-15, 0))
             
         plt.figure(figsize=(5,3))
-        plt.hist2d(mm_a_grados(np.array([coord[0] for coord in estimulo_no_detectado])),
+        plt.scatter(mm_a_grados(np.array([coord[0] for coord in estimulo_no_detectado])),
                    mm_a_grados(np.array([coord[1] for coord in estimulo_no_detectado])),
                    bins=[15,15], cmap='Greys')
         plt.plot(ex,ey)
