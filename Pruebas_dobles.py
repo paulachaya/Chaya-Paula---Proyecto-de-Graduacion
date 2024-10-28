@@ -10,6 +10,8 @@ import keyboard
 from collections import Counter
 from Eyetracker import eyetracker
 from Eyetracker import Lectura
+import matplotlib.pyplot as plt
+from matplotlib.patches import Circle
 
 #Cargo datos de calibracion
 calibracion = pd.read_csv('calibracion.csv',delimiter=';')
@@ -18,8 +20,6 @@ print(calibracion.columns)
 ord_x, pend_x = float(calibracion['Ordenada X'][0]), float(calibracion['Pendiente X'][0])
 ord_y, pend_y = float(calibracion['Ordenada Y'][0]), float(calibracion['Pendiente Y'][0])
 print(ord_x,pend_x,ord_y,pend_y)
-error_x = float(calibracion['Error X'][0])
-error_y = float(calibracion['Error Y'][0])
 
 class Pruebas(tk.Tk):
     def __init__(self):
@@ -173,8 +173,8 @@ class Pruebas(tk.Tk):
             # Si no se encontró un vector, se define uno
             # hacia el origen
             x,y = -self.ox,-self.oy
-            self.dist_xmin, self.dist_xmax = -180,180
-            self.dist_ymin, self.dist_ymax = -90,90
+            self.dist_xmin, self.dist_xmax = -150,150
+            self.dist_ymin, self.dist_ymax = -70,70
             self.cantidad_total_vectores = self.cantidad_total_vectores + 1
             #i = i-1
 
@@ -298,7 +298,7 @@ class Pruebas(tk.Tk):
                 if self.tipo=='Teclado':
                     self.resultado = 0
                     teclado = threading.Thread(target=self.teclado,
-                                            args=(i,))
+                                               args=(i,))
                     teclado.start()
 
                     # El punto se borra a los 200 ms
@@ -307,8 +307,10 @@ class Pruebas(tk.Tk):
                     # Luego de 2 segundos, se determina
                     # si se presionó la barra en la prueba
                     self.after(2500, lambda: 
-                            self.analisis_respuesta_teclado(vector_x,
-                                                            vector_y))
+                                self.analisis_respuesta_teclado(dist_x,
+                                                                dist_y,
+                                                                ox,
+                                                                oy))
                 if self.tipo == 'Eyetracker':
                     self.datos = []
                     self.resultado = 0
@@ -360,8 +362,8 @@ class Pruebas(tk.Tk):
                 # Determino los límites de la pantalla,
                 # es decir, las distancias maximas y minimas 
                 # que puedo presentar en pantalla
-                self.dist_xmin, self.dist_xmax = -180,180
-                self.dist_ymin, self.dist_ymax = -90,90
+                self.dist_xmin, self.dist_xmax = -150,150
+                self.dist_ymin, self.dist_ymax = -70,70
                     
                 # Defino las variables para las gráficas
                 self.largo,self.ancho,self.color = 30, 3, 'black'
@@ -395,19 +397,18 @@ class Pruebas(tk.Tk):
                 break
         print(f'{i+1}/{self.cantidad_total_vectores}:{self.resultado}\n')
 
-    def analisis_respuesta_teclado(self,vector_x,vector_y):
-        if self.color == 'white':
-                self.respuesta.append([vector_x,vector_y,self.resultado])              
-                if self.resultado == 0: # no detectó el estímulo
-                    #self.vect_no_detectado.append([dist_x-self.ox, dist_y-self.oy])
-                    print(f'Vector {vector_x,vector_y} no percibido.\n')
-                    self.vect_no_percibidos.append([vector_x,vector_y])
+    def analisis_respuesta_teclado(self,dist_x,dist_y,ox,oy):
+        if self.color == 'black':
+            if self.resultado == 0: # no detectó el estímulo
+                print(f'Vector {dist_x-ox,dist_y-oy} no percibido.\n')
+                self.vect_no_percibidos.append([dist_x-ox,dist_y-oy])
+            self.respuesta.append([dist_x-ox,dist_y-oy,self.resultado])              
+
 
     # Funcion de validez prueba objetiva
     def validez_y_respuesta(self,i,dist_x,dist_y,ox,oy):
         x = [coord[0] for coord in self.datos[0]]
         y = [coord[1] for coord in self.datos[0]]
-
 
         if self.color == 'black':
             if (abs(np.mean(x[30:50])-ox)<40) and (abs(np.mean(y[30:50])-oy)<40):
@@ -432,8 +433,7 @@ class Pruebas(tk.Tk):
 
         # Grafico donde vio el sujeto en la pantalla
         self.graficar((np.mean(x[-15:]),np.mean(y[-15:])),"Operario")
-        
-        
+
     def Guardar(self):
         #Lista de Vectores original
         # Genero el patrón de vectores incial
@@ -464,5 +464,5 @@ class Pruebas(tk.Tk):
 def main(): 
     app = Pruebas()
     app.mainloop()
-if __name__ == '__main__':
+if __name__ == '__main__': 
     main()
