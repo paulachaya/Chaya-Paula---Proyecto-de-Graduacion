@@ -50,7 +50,7 @@ def Grafica_resultado(Sujeto,Ojo,estimulo_no_detectado):
         plt.figure(figsize=(5,3))
         plt.hist2d(mm_a_grados(np.array([coord[0] for coord in estimulo_no_detectado])),
                    mm_a_grados(np.array([coord[1] for coord in estimulo_no_detectado])),
-                   bins=[5,5], cmap='Greys')
+                   bins=[10,10], cmap='Greys')
         plt.plot(ex,ey)
         plt.colorbar(label='Frecuencia')
         plt.xlim(-25,25);plt.ylim(-17,17)

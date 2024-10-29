@@ -163,7 +163,7 @@ class Calibracion(tk.Tk):
                 # pero con nuevos valores en las variables.
                 self.puntos_validacion = [[-100,50],[100,50],
                                           [0,0],
-                                          [-100,-50],[-100,50]]
+                                          [-100,-50],[100,-50]]
                 i = 0
                 self.datos = []
                 etapa = 'validacion'
